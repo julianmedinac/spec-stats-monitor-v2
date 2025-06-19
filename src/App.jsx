@@ -2,6 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, ComposedChart, Area, AreaChart } from 'recharts';
 import { TrendingUp, TrendingDown, AlertTriangle, Download, RefreshCw, Wifi, WifiOff, DollarSign, Calculator, LogOut, User } from 'lucide-react';
 
+// TEMPORAL - para verificar variables
+console.log('API Keys Check:', {
+  alpha: process.env.REACT_APP_ALPHA_VANTAGE_KEY,
+  fred: process.env.REACT_APP_FRED_KEY
+});
+
 // Configuración Spec Stats
 const SPEC_STATS_CONFIG = {
   name: "Spec Stats",
