@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, ComposedChart, Area } from 'recharts';
-import { TrendingUp, TrendingDown, AlertTriangle, RefreshCw, Wifi, DollarSign, Calculator, LogOut, User } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, ComposedChart, Area, AreaChart } from 'recharts';
+import { TrendingUp, TrendingDown, AlertTriangle, Download, RefreshCw, Wifi, WifiOff, DollarSign, Calculator, LogOut, User } from 'lucide-react';
 
 // Configuración Spec Stats
 const SPEC_STATS_CONFIG = {
@@ -15,14 +15,12 @@ const SPEC_STATS_CONFIG = {
     warning: "#F59E0B",
     danger: "#EF4444"
   },
-  // Emails autorizados - personalizar con los reales
+  // Emails temporales - reemplazar por los reales después
   authorizedEmails: [
     "admin@specstats.com",
     "test@specstats.com",
-    "demo@specstats.com",
-    "estudiante1@specstats.com",
-    "estudiante2@specstats.com"
-    // Agregar más emails de tu comunidad aquí
+    "demo@specstats.com"
+    // Agregar emails reales después
   ]
 };
 
@@ -30,11 +28,14 @@ const SPEC_STATS_CONFIG = {
 const SpecStatsLogo = ({ size = "h-8" }) => (
   <div className={`${size} flex items-center space-x-2`}>
     <div className="relative">
+      {/* Logo S */}
       <svg viewBox="0 0 100 120" className={size} fill="none">
+        {/* Forma de S */}
         <path 
           d="M20 20 L80 20 Q90 20 90 30 L90 35 Q90 45 80 45 L40 45 Q30 45 30 55 L30 60 Q30 70 40 70 L80 70 Q90 70 90 80 L90 85 Q90 95 80 95 L20 95 Q10 95 10 85 L10 80 Q10 70 20 70 L60 70 Q70 70 70 60 L70 55 Q70 45 60 45 L20 45 Q10 45 10 35 L10 30 Q10 20 20 20 Z" 
           fill={SPEC_STATS_CONFIG.colors.secondary}
         />
+        {/* Punto púrpura */}
         <rect 
           x="35" 
           y="100" 
@@ -91,129 +92,54 @@ const AccessControl = ({ children }) => {
 
   if (!isAuthenticated) {
     return (
-      <div style={{
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #8B5CF6 0%, #000000 100%)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '20px'
-      }}>
-        <div style={{
-          backgroundColor: 'white',
-          padding: '40px',
-          borderRadius: '20px',
-          boxShadow: '0 25px 50px rgba(0,0,0,0.25)',
-          maxWidth: '450px',
-          width: '100%'
-        }}>
-          <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+      <div className="min-h-screen bg-gradient-to-br from-purple-600 via-black to-purple-900 flex items-center justify-center">
+        <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-md w-full mx-4 border border-gray-100">
+          <div className="text-center mb-8">
             <SpecStatsLogo size="h-16" />
-            <h1 style={{ 
-              fontSize: '2.5rem', 
-              fontWeight: 'bold', 
-              color: SPEC_STATS_CONFIG.colors.primary,
-              margin: '20px 0 10px 0'
-            }}>
+            <h1 className="text-3xl font-bold mt-4 mb-2" style={{ color: SPEC_STATS_CONFIG.colors.primary }}>
               {SPEC_STATS_CONFIG.name}
             </h1>
-            <p style={{ color: '#6B7280', fontWeight: '500' }}>
+            <p className="text-gray-600 font-medium">
               {SPEC_STATS_CONFIG.tagline}
             </p>
-            <div style={{
-              marginTop: '20px',
-              padding: '15px',
-              backgroundColor: '#F3F4F6',
-              borderRadius: '10px',
-              border: `2px solid ${SPEC_STATS_CONFIG.colors.primary}20`
-            }}>
-              <p style={{ 
-                fontSize: '0.9rem', 
-                color: SPEC_STATS_CONFIG.colors.primary,
-                fontWeight: '600'
-              }}>
+            <div className="mt-4 p-3 bg-purple-50 rounded-lg border border-purple-200">
+              <p className="text-sm text-purple-700 font-semibold">
                 🎯 Monitor Exclusivo de COTs CFTC + Carry Trade Costs
               </p>
             </div>
           </div>
           
-          <form onSubmit={handleLogin}>
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ 
-                display: 'block', 
-                color: '#374151', 
-                fontSize: '0.9rem', 
-                fontWeight: '600', 
-                marginBottom: '8px' 
-              }}>
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div>
+              <label className="block text-gray-700 text-sm font-semibold mb-2">
                 📧 Email Autorizado:
               </label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  border: '2px solid #D1D5DB',
-                  borderRadius: '8px',
-                  fontSize: '1rem',
-                  outline: 'none',
-                  transition: 'border-color 0.2s'
-                }}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition duration-200"
                 placeholder="tu-email@ejemplo.com"
                 required
                 disabled={isLoading}
-                onFocus={(e) => e.target.style.borderColor = SPEC_STATS_CONFIG.colors.primary}
-                onBlur={(e) => e.target.style.borderColor = '#D1D5DB'}
               />
             </div>
             
             {error && (
-              <div style={{
-                padding: '12px',
-                backgroundColor: '#FEF2F2',
-                border: '1px solid #FECACA',
-                borderRadius: '8px',
-                marginBottom: '20px'
-              }}>
-                <p style={{ color: '#DC2626', fontSize: '0.9rem', fontWeight: '500' }}>{error}</p>
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-600 text-sm font-medium">{error}</p>
               </div>
             )}
             
             <button
               type="submit"
               disabled={isLoading}
-              style={{
-                width: '100%',
-                padding: '12px 20px',
-                backgroundColor: SPEC_STATS_CONFIG.colors.primary,
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '1rem',
-                fontWeight: '600',
-                cursor: isLoading ? 'not-allowed' : 'pointer',
-                opacity: isLoading ? 0.7 : 1,
-                transition: 'all 0.2s',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '10px'
-              }}
-              onMouseOver={(e) => !isLoading && (e.target.style.backgroundColor = '#7C3AED')}
-              onMouseOut={(e) => !isLoading && (e.target.style.backgroundColor = SPEC_STATS_CONFIG.colors.primary)}
+              className="w-full py-3 px-4 rounded-lg text-white font-semibold transition duration-200 flex items-center justify-center space-x-2 disabled:opacity-50 hover:opacity-90"
+              style={{ backgroundColor: SPEC_STATS_CONFIG.colors.primary }}
             >
               {isLoading ? (
                 <>
-                  <div style={{
-                    width: '20px',
-                    height: '20px',
-                    border: '2px solid white',
-                    borderTop: '2px solid transparent',
-                    borderRadius: '50%',
-                    animation: 'spin 1s linear infinite'
-                  }}></div>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                   <span>Verificando...</span>
                 </>
               ) : (
@@ -222,70 +148,35 @@ const AccessControl = ({ children }) => {
             </button>
           </form>
           
-          <div style={{
-            marginTop: '30px',
-            paddingTop: '20px',
-            borderTop: '1px solid #E5E7EB',
-            textAlign: 'center'
-          }}>
-            <p style={{ fontSize: '0.8rem', color: '#6B7280' }}>
+          <div className="mt-8 pt-6 border-t border-gray-200">
+            <p className="text-xs text-gray-500 text-center">
               Acceso exclusivo para estudiantes autorizados de <strong>Spec Stats</strong>
             </p>
-            <p style={{ fontSize: '0.75rem', color: '#9CA3AF', marginTop: '5px' }}>
+            <p className="text-xs text-gray-400 text-center mt-1">
               ¿No tienes acceso? Contacta al administrador
             </p>
-            <p style={{ fontSize: '0.75rem', color: SPEC_STATS_CONFIG.colors.primary, marginTop: '10px' }}>
+            <p className="text-xs text-blue-500 text-center mt-2">
               Demo: usa admin@specstats.com o test@specstats.com
             </p>
           </div>
         </div>
-        
-        <style>{`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        `}</style>
       </div>
     );
   }
 
   return (
     <div>
-      <div style={{
-        backgroundColor: 'white',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-        borderBottom: '1px solid #E5E7EB',
-        padding: '12px 24px'
-      }}>
-        <div style={{
-          maxWidth: '1200px',
-          margin: '0 auto',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
+      <div className="bg-white shadow-sm border-b border-gray-200 px-6 py-3">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
           <SpecStatsLogo />
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', color: '#6B7280' }}>
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 text-sm text-gray-600">
               <User size={16} />
               <span>{email}</span>
             </div>
             <button
               onClick={handleLogout}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px',
-                fontSize: '0.9rem',
-                color: SPEC_STATS_CONFIG.colors.primary,
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontWeight: '500'
-              }}
-              onMouseOver={(e) => e.target.style.color = '#7C3AED'}
-              onMouseOut={(e) => e.target.style.color = SPEC_STATS_CONFIG.colors.primary}
+              className="flex items-center space-x-1 text-sm text-purple-600 hover:text-purple-800 font-medium"
             >
               <LogOut size={16} />
               <span>Salir</span>
@@ -298,21 +189,21 @@ const AccessControl = ({ children }) => {
   );
 };
 
-// Componente Principal del Monitor
+// Componente Principal
 const SpecStatsCOTAnalyzer = () => {
   const [cotData, setCotData] = useState({ jpy: [], chf: [] });
   const [fxData, setFxData] = useState({ usdjpy: [], usdchf: [] });
   const [interestRates, setInterestRates] = useState({
-    usd_3m: 4.34, // T-Bill 3M actual
-    jpy_3m: 0.77, // TIBOR 3M actual
-    chf_3m: 0.96  // SARON aprox 3M
+    usd_3m: 4.34,
+    jpy_3m: 0.77,
+    chf_3m: 0.96
   });
   const [carryTradeCosts, setCarryTradeCosts] = useState({ usdjpy: [], usdchf: [] });
   const [loading, setLoading] = useState(false);
   const [lastUpdate, setLastUpdate] = useState(null);
   const [alerts, setAlerts] = useState([]);
 
-  // Generar datos mock realistas para demostración
+  // Generar datos mock para demostración
   const generateMockCOTData = (currency) => {
     const data = [];
     const baseDate = new Date();
@@ -342,7 +233,6 @@ const SpecStatsCOTAnalyzer = () => {
       });
     }
     
-    // Calcular deltas
     for (let i = 1; i < data.length; i++) {
       data[i].deltaNet = data[i].totalNet - data[i-1].totalNet;
       data[i].deltaLeveraged = data[i].netLeveraged - data[i-1].netLeveraged;
@@ -361,7 +251,7 @@ const SpecStatsCOTAnalyzer = () => {
       const date = new Date(baseDate);
       date.setDate(date.getDate() - (i * 7));
       
-      const change = (Math.random() - 0.5) * 0.04; // ±2% volatilidad semanal
+      const change = (Math.random() - 0.5) * 0.04;
       baseRate *= (1 + change);
       
       data.push({
@@ -382,7 +272,7 @@ const SpecStatsCOTAnalyzer = () => {
                       quoteCurrency === 'JPY' ? interestRates.jpy_3m : interestRates.chf_3m;
     
     return fxDataArray.map(item => {
-      const interestDifferential = (baseRate - quoteRate) / 52; // Semanal
+      const interestDifferential = (baseRate - quoteRate) / 52;
       const totalCarryCost = item.weeklyChange + interestDifferential;
       
       return {
@@ -488,51 +378,45 @@ const SpecStatsCOTAnalyzer = () => {
   const CarryTradeCard = ({ pair, data, title }) => {
     if (!data) return null;
     
-    const costColor = data.totalCarryCost > 0 ? '#EF4444' : '#10B981';
+    const costColor = data.totalCarryCost > 0 ? 'text-red-600' : 'text-green-600';
     const CostIcon = data.totalCarryCost > 0 ? TrendingUp : TrendingDown;
     
     return (
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '12px',
-        boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-        padding: '24px',
-        borderLeft: `4px solid ${SPEC_STATS_CONFIG.colors.primary}`
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#1F2937' }}>{title}</h3>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <CostIcon size={20} color={costColor} />
-            <span style={{ fontSize: '0.9rem', fontWeight: '600', color: costColor }}>
+      <div className="bg-white rounded-lg shadow-lg p-6 border-l-4" style={{ borderColor: SPEC_STATS_CONFIG.colors.primary }}>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-bold text-gray-800">{title}</h3>
+          <div className="flex items-center space-x-2">
+            <CostIcon className={costColor.replace('text-', 'text-')} size={20} />
+            <span className={`text-sm font-semibold ${costColor}`}>
               {formatPercent(data.totalCarryCost)}
             </span>
           </div>
         </div>
         
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+        <div className="grid grid-cols-2 gap-4 mb-4">
           <div>
-            <p style={{ fontSize: '0.875rem', color: '#6B7280' }}>Spot Rate</p>
-            <p style={{ fontSize: '1.125rem', fontWeight: 'bold' }}>{data.rate}</p>
+            <p className="text-sm text-gray-600">Spot Rate</p>
+            <p className="text-lg font-bold">{data.rate}</p>
           </div>
           <div>
-            <p style={{ fontSize: '0.875rem', color: '#6B7280' }}>Cambio Semanal</p>
-            <p style={{ fontSize: '1.125rem', fontWeight: 'bold', color: data.weeklyChange > 0 ? '#10B981' : '#EF4444' }}>
+            <p className="text-sm text-gray-600">Cambio Semanal</p>
+            <p className={`text-lg font-bold ${data.weeklyChange > 0 ? 'text-green-600' : 'text-red-600'}`}>
               {formatPercent(data.weeklyChange)}
             </p>
           </div>
           <div>
-            <p style={{ fontSize: '0.875rem', color: '#6B7280' }}>Diferencial Tasas</p>
-            <p style={{ fontSize: '1.125rem', fontWeight: 'bold' }}>{formatPercent(data.interestDifferential)}</p>
+            <p className="text-sm text-gray-600">Diferencial Tasas</p>
+            <p className="text-lg font-bold">{formatPercent(data.interestDifferential)}</p>
           </div>
           <div>
-            <p style={{ fontSize: '0.875rem', color: '#6B7280' }}>Costo Total Carry</p>
-            <p style={{ fontSize: '1.125rem', fontWeight: 'bold', color: costColor }}>
+            <p className="text-sm text-gray-600">Costo Total Carry</p>
+            <p className={`text-lg font-bold ${costColor}`}>
               {formatPercent(data.totalCarryCost)}
             </p>
           </div>
         </div>
         
-        <div style={{ fontSize: '0.75rem', color: '#6B7280' }}>
+        <div className="text-xs text-gray-500 space-y-1">
           <p>Base: {data.baseRate?.toFixed(2)}% | Quote: {data.quoteRate?.toFixed(2)}%</p>
           <p>Fecha: {data.date}</p>
         </div>
@@ -543,49 +427,44 @@ const SpecStatsCOTAnalyzer = () => {
   const CurrencyCard = ({ currency, data }) => {
     if (!data) return null;
     
-    const deltaColor = data.deltaNet > 0 ? '#10B981' : '#EF4444';
-    const DeltaIcon = data.deltaNet > 0 ? TrendingUp : TrendingDown;
-    
     return (
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '12px',
-        boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-        padding: '24px',
-        borderLeft: `4px solid ${SPEC_STATS_CONFIG.colors.primary}`
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#1F2937' }}>{currency}</h3>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <DeltaIcon size={20} color={deltaColor} />
-            <span style={{ fontSize: '0.9rem', fontWeight: '600', color: deltaColor }}>
+      <div className="bg-white rounded-lg shadow-lg p-6 border-l-4" style={{ borderColor: SPEC_STATS_CONFIG.colors.primary }}>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-bold text-gray-800">{currency}</h3>
+          <div className="flex items-center space-x-2">
+            {data.deltaNet > 0 ? (
+              <TrendingUp className="text-green-500" size={20} />
+            ) : (
+              <TrendingDown className="text-red-500" size={20} />
+            )}
+            <span className={`text-sm font-semibold ${data.deltaNet > 0 ? 'text-green-600' : 'text-red-600'}`}>
               {data.deltaNet > 0 ? '+' : ''}{formatNumber(data.deltaNet)}
             </span>
           </div>
         </div>
         
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+        <div className="grid grid-cols-2 gap-4 mb-4">
           <div>
-            <p style={{ fontSize: '0.875rem', color: '#6B7280' }}>Posición Neta Total</p>
-            <p style={{ fontSize: '1.125rem', fontWeight: 'bold' }}>{formatNumber(data.totalNet)}</p>
+            <p className="text-sm text-gray-600">Posición Neta Total</p>
+            <p className="text-lg font-bold">{formatNumber(data.totalNet)}</p>
           </div>
           <div>
-            <p style={{ fontSize: '0.875rem', color: '#6B7280' }}>Delta Semanal</p>
-            <p style={{ fontSize: '1.125rem', fontWeight: 'bold', color: deltaColor }}>
+            <p className="text-sm text-gray-600">Delta Semanal</p>
+            <p className={`text-lg font-bold ${data.deltaNet > 0 ? 'text-green-600' : 'text-red-600'}`}>
               {data.deltaNet > 0 ? '+' : ''}{formatNumber(data.deltaNet)}
             </p>
           </div>
           <div>
-            <p style={{ fontSize: '0.875rem', color: '#6B7280' }}>Non-Commercial</p>
-            <p style={{ fontSize: '1.125rem', fontWeight: 'bold' }}>{formatNumber(data.netLeveraged)}</p>
+            <p className="text-sm text-gray-600">Non-Commercial Neto</p>
+            <p className="text-lg font-bold">{formatNumber(data.netLeveraged)}</p>
           </div>
           <div>
-            <p style={{ fontSize: '0.875rem', color: '#6B7280' }}>Other Reportable</p>
-            <p style={{ fontSize: '1.125rem', fontWeight: 'bold' }}>{formatNumber(data.netAssetManager)}</p>
+            <p className="text-sm text-gray-600">Other Reportable Neto</p>
+            <p className="text-lg font-bold">{formatNumber(data.netAssetManager)}</p>
           </div>
         </div>
         
-        <div style={{ fontSize: '0.75rem', color: '#6B7280' }}>
+        <div className="text-xs text-gray-500">
           Fecha reporte: {data.date}
         </div>
       </div>
@@ -593,24 +472,35 @@ const SpecStatsCOTAnalyzer = () => {
   };
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px', backgroundColor: '#F9FAFB', minHeight: '100vh' }}>
+    <div className="max-w-7xl mx-auto p-6 bg-gray-50 min-h-screen">
       {/* Header personalizado Spec Stats */}
-      <div style={{ marginBottom: '30px' }}>
-        <div style={{
-          background: `linear-gradient(135deg, ${SPEC_STATS_CONFIG.colors.primary} 0%, ${SPEC_STATS_CONFIG.colors.secondary} 100%)`,
-          borderRadius: '12px',
-          padding: '30px',
-          marginBottom: '20px',
-          color: 'white'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: SPEC_STATS_CONFIG.colors.primary }}>
+      <div className="mb-8">
+        <div 
+          className="rounded-lg p-6 mb-6 text-white"
+          style={{ background: `linear-gradient(135deg, ${SPEC_STATS_CONFIG.colors.primary} 0%, ${SPEC_STATS_CONFIG.colors.secondary} 100%)` }}
+        >
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">Monitor COT + Carry Trade</h1>
+              <p className="text-purple-100">
+                Análisis exclusivo para estudiantes de Spec Stats
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-sm text-purple-200">Acceso Exclusivo</p>
+              <p className="font-semibold">JPY & CHF Trading Signals</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 text-purple-600">
               <Wifi size={16} />
-              <span style={{ fontSize: '0.9rem' }}>Demo - Spec Stats</span>
+              <span className="text-sm">Modo Demo - Spec Stats</span>
             </div>
             {lastUpdate && (
-              <p style={{ fontSize: '0.9rem', color: '#6B7280', margin: 0 }}>
+              <p className="text-sm text-gray-600">
                 Última actualización: {lastUpdate.toLocaleString()}
               </p>
             )}
@@ -618,123 +508,62 @@ const SpecStatsCOTAnalyzer = () => {
           <button
             onClick={fetchAllData}
             disabled={loading}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              backgroundColor: SPEC_STATS_CONFIG.colors.primary,
-              color: 'white',
-              padding: '10px 20px',
-              borderRadius: '8px',
-              border: 'none',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              opacity: loading ? 0.7 : 1,
-              transition: 'all 0.2s',
-              fontWeight: '500'
-            }}
-            onMouseOver={(e) => !loading && (e.target.style.backgroundColor = '#7C3AED')}
-            onMouseOut={(e) => !loading && (e.target.style.backgroundColor = SPEC_STATS_CONFIG.colors.primary)}
+            className="flex items-center space-x-2 text-white px-4 py-2 rounded-lg hover:opacity-90 disabled:opacity-50 transition duration-200"
+            style={{ backgroundColor: SPEC_STATS_CONFIG.colors.primary }}
           >
-            <RefreshCw size={16} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} />
+            <RefreshCw className={`${loading ? 'animate-spin' : ''}`} size={16} />
             <span>{loading ? 'Actualizando...' : 'Actualizar'}</span>
           </button>
         </div>
       </div>
 
-      {/* Panel de Tasas de Interés Actuales */}
-      <div style={{
-        backgroundColor: '#F3F4F6',
-        padding: '24px',
-        borderRadius: '12px',
-        marginBottom: '30px',
-        border: `2px solid ${SPEC_STATS_CONFIG.colors.primary}20`
-      }}>
-        <h3 style={{
-          fontSize: '1.25rem',
-          fontWeight: 'bold',
-          marginBottom: '20px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          color: SPEC_STATS_CONFIG.colors.primary,
-          margin: '0 0 20px 0'
-        }}>
-          <Calculator size={20} />
+      {/* Panel de Tasas de Interés */}
+      <div className="bg-purple-50 p-6 rounded-lg mb-8 border border-purple-200">
+        <h3 className="text-lg font-bold mb-4 flex items-center" style={{ color: SPEC_STATS_CONFIG.colors.primary }}>
+          <Calculator className="mr-2" size={20} />
           📊 Tasas de Interés 3M Actuales
         </h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', textAlign: 'center' }}>
-          <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', border: '1px solid #E5E7EB' }}>
-            <p style={{ fontSize: '0.875rem', color: '#6B7280', margin: '0 0 8px 0' }}>🇺🇸 USD T-Bill 3M</p>
-            <p style={{
-              fontSize: '2rem',
-              fontWeight: 'bold',
-              color: SPEC_STATS_CONFIG.colors.primary,
-              margin: 0
-            }}>
+        <div className="grid grid-cols-3 gap-4 text-center">
+          <div className="bg-white p-4 rounded-lg border border-purple-100">
+            <p className="text-sm text-gray-600">🇺🇸 USD T-Bill 3M</p>
+            <p className="text-2xl font-bold" style={{ color: SPEC_STATS_CONFIG.colors.primary }}>
               {interestRates.usd_3m}%
             </p>
           </div>
-          <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', border: '1px solid #E5E7EB' }}>
-            <p style={{ fontSize: '0.875rem', color: '#6B7280', margin: '0 0 8px 0' }}>🇯🇵 JPY TIBOR 3M</p>
-            <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#EF4444', margin: 0 }}>
-              {interestRates.jpy_3m}%
-            </p>
+          <div className="bg-white p-4 rounded-lg border border-purple-100">
+            <p className="text-sm text-gray-600">🇯🇵 JPY TIBOR 3M</p>
+            <p className="text-2xl font-bold text-red-600">{interestRates.jpy_3m}%</p>
           </div>
-          <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', border: '1px solid #E5E7EB' }}>
-            <p style={{ fontSize: '0.875rem', color: '#6B7280', margin: '0 0 8px 0' }}>🇨🇭 CHF SARON 3M</p>
-            <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#10B981', margin: 0 }}>
-              {interestRates.chf_3m}%
-            </p>
+          <div className="bg-white p-4 rounded-lg border border-purple-100">
+            <p className="text-sm text-gray-600">🇨🇭 CHF SARON 3M</p>
+            <p className="text-2xl font-bold text-green-600">{interestRates.chf_3m}%</p>
           </div>
-        </div>
-        <div style={{ marginTop: '16px', textAlign: 'center' }}>
-          <p style={{ fontSize: '0.875rem', color: '#6B7280', margin: 0 }}>
-            Diferencial USD-JPY: <span style={{ fontWeight: 'bold', color: SPEC_STATS_CONFIG.colors.primary }}>
-              {(interestRates.usd_3m - interestRates.jpy_3m).toFixed(2)}%
-            </span> | 
-            Diferencial USD-CHF: <span style={{ fontWeight: 'bold', color: SPEC_STATS_CONFIG.colors.primary }}>
-              {(interestRates.usd_3m - interestRates.chf_3m).toFixed(2)}%
-            </span>
-          </p>
         </div>
       </div>
 
       {/* Alertas */}
       {alerts.length > 0 && (
-        <div style={{ marginBottom: '30px' }}>
-          <h2 style={{
-            fontSize: '1.5rem',
-            fontWeight: 'bold',
-            marginBottom: '15px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            margin: '0 0 15px 0'
-          }}>
-            <AlertTriangle size={20} color="#F59E0B" />
+        <div className="mb-6">
+          <h2 className="text-xl font-bold mb-3 flex items-center">
+            <AlertTriangle className="mr-2 text-orange-500" size={20} />
             🚨 Alertas de Trading - Spec Stats
           </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {alerts.map((alert, index) => (
-              <div key={index} style={{
-                padding: '16px',
-                borderRadius: '8px',
-                borderLeft: `4px solid ${alert.severity === 'high' ? '#EF4444' : alert.severity === 'medium' ? '#F59E0B' : '#10B981'}`,
-                backgroundColor: alert.severity === 'high' ? '#FEF2F2' : alert.severity === 'medium' ? '#FFFBEB' : '#F0FDF4'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div key={index} className={`p-4 rounded-lg border-l-4 ${
+                alert.severity === 'high' ? 'bg-red-50 border-red-400' : 
+                alert.severity === 'medium' ? 'bg-yellow-50 border-yellow-400' : 
+                'bg-green-50 border-green-400'
+              }`}>
+                <div className="flex justify-between items-start">
                   <div>
-                    <p style={{ fontWeight: 'bold', fontSize: '1.125rem', margin: '0 0 8px 0' }}>{alert.currency}</p>
-                    <p style={{ fontSize: '0.875rem', margin: 0 }}>{alert.message}</p>
+                    <p className="font-bold text-lg">{alert.currency}</p>
+                    <p className="text-sm">{alert.message}</p>
                   </div>
-                  <span style={{
-                    padding: '4px 8px',
-                    borderRadius: '4px',
-                    fontSize: '0.75rem',
-                    fontWeight: 'bold',
-                    color: 'white',
-                    backgroundColor: alert.category === 'COT' ? SPEC_STATS_CONFIG.colors.primary : SPEC_STATS_CONFIG.colors.secondary
-                  }}>
+                  <span 
+                    className="px-2 py-1 rounded text-xs font-bold text-white"
+                    style={{ backgroundColor: alert.category === 'COT' ? SPEC_STATS_CONFIG.colors.primary : SPEC_STATS_CONFIG.colors.secondary }}
+                  >
                     {alert.category}
                   </span>
                 </div>
@@ -745,23 +574,14 @@ const SpecStatsCOTAnalyzer = () => {
       )}
 
       {/* Cards de Carry Trade */}
-      <div style={{ marginBottom: '30px' }}>
-        <h2 style={{
-          fontSize: '1.5rem',
-          fontWeight: 'bold',
-          marginBottom: '15px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          margin: '0 0 15px 0'
-        }}>
-          <DollarSign size={20} color="#10B981" />
+      <div className="mb-8">
+        <h2 className="text-xl font-bold mb-4 flex items-center">
+          <DollarSign className="mr-2 text-green-500" size={20} />
           💰 Costos de Fondeo Carry Trade (Semanal)
         </h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '20px' }}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <CarryTradeCard 
             pair="usdjpy" 
-            data={getLatestCarryData('usdjpy')} 
             title="USD/JPY Carry Cost" 
           />
           <CarryTradeCard 
@@ -773,18 +593,16 @@ const SpecStatsCOTAnalyzer = () => {
       </div>
 
       {/* Cards de COT */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <CurrencyCard currency="JPY" data={getLatestData('jpy')} />
         <CurrencyCard currency="CHF" data={getLatestData('chf')} />
       </div>
 
       {/* Gráficos */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
+      <div className="space-y-8">
         {/* Gráfico de Costos de Carry Trade */}
-        <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '20px', margin: '0 0 20px 0' }}>
-            💸 Evolución Costos de Carry Trade
-          </h2>
+        <div className="bg-white p-6 rounded-lg shadow-lg">
+          <h2 className="text-xl font-bold mb-4">💸 Evolución Costos de Carry Trade</h2>
           <ResponsiveContainer width="100%" height={400}>
             <ComposedChart>
               <CartesianGrid strokeDasharray="3 3" />
@@ -840,10 +658,8 @@ const SpecStatsCOTAnalyzer = () => {
         </div>
 
         {/* Gráfico tradicional COT */}
-        <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '20px', margin: '0 0 20px 0' }}>
-            📈 Evolución Posicionamiento Neto COT
-          </h2>
+        <div className="bg-white p-6 rounded-lg shadow-lg">
+          <h2 className="text-xl font-bold mb-4">📈 Evolución Posicionamiento Neto COT</h2>
           <ResponsiveContainer width="100%" height={400}>
             <LineChart>
               <CartesianGrid strokeDasharray="3 3" />
@@ -863,7 +679,7 @@ const SpecStatsCOTAnalyzer = () => {
                 type="monotone" 
                 dataKey="totalNet" 
                 stroke={SPEC_STATS_CONFIG.colors.primary}
-                strokeWidth={3}
+                strokeWidth={2}
                 name="JPY Net"
                 dot={{ r: 4 }}
               />
@@ -872,7 +688,7 @@ const SpecStatsCOTAnalyzer = () => {
                 type="monotone" 
                 dataKey="totalNet" 
                 stroke={SPEC_STATS_CONFIG.colors.secondary}
-                strokeWidth={3}
+                strokeWidth={2}
                 name="CHF Net"
                 dot={{ r: 4 }}
               />
@@ -880,90 +696,37 @@ const SpecStatsCOTAnalyzer = () => {
           </ResponsiveContainer>
         </div>
 
-        {/* Gráfico de Deltas COT */}
-        <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '20px', margin: '0 0 20px 0' }}>
-            🔄 Cambios Semanales COT (Delta) - Carry Trade Signals
-          </h2>
-          <ResponsiveContainer width="100%" height={400}>
-            <BarChart>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
-                dataKey="date"
-                tickFormatter={(date) => new Date(date).toLocaleDateString()}
-              />
-              <YAxis />
-              <Tooltip 
-                labelFormatter={(date) => new Date(date).toLocaleDateString()}
-                formatter={(value, name) => [formatNumber(value), name]}
-              />
-              <Legend />
-              <Bar 
-                data={cotData.jpy}
-                dataKey="deltaNet" 
-                fill={SPEC_STATS_CONFIG.colors.primary}
-                name="JPY Delta"
-                opacity={0.8}
-              />
-              <Bar 
-                data={cotData.chf}
-                dataKey="deltaNet" 
-                fill="#EF4444"
-                name="CHF Delta"
-                opacity={0.8}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
         {/* Panel Educativo para Spec Stats */}
-        <div style={{
-          background: 'linear-gradient(to right, #F3E8FF, #F9FAFB)',
-          padding: '24px',
-          borderRadius: '12px',
-          border: `2px solid ${SPEC_STATS_CONFIG.colors.primary}30`
-        }}>
-          <h3 style={{
-            fontSize: '1.25rem',
-            fontWeight: 'bold',
-            marginBottom: '20px',
-            color: SPEC_STATS_CONFIG.colors.primary,
-            margin: '0 0 20px 0'
-          }}>
+        <div className="bg-gradient-to-r from-purple-50 to-gray-50 p-6 rounded-lg border border-purple-200">
+          <h3 className="text-xl font-bold mb-4" style={{ color: SPEC_STATS_CONFIG.colors.primary }}>
             📚 Guía de Interpretación Spec Stats - ES/NQ Trading
           </h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px', fontSize: '0.875rem' }}>
-            <div style={{ backgroundColor: 'white', padding: '16px', borderRadius: '8px', border: '2px solid #10B981' }}>
-              <h4 style={{ fontWeight: 'bold', color: '#10B981', marginBottom: '10px', margin: '0 0 10px 0' }}>
-                ✅ Señales Alcistas ES/NQ
-              </h4>
-              <ul style={{ margin: 0, paddingLeft: '16px', color: '#374151' }}>
-                <li style={{ marginBottom: '4px' }}>JPY carry cost bajo (-2% o menos)</li>
-                <li style={{ marginBottom: '4px' }}>CHF posiciones short aumentando</li>
-                <li style={{ marginBottom: '4px' }}>COT non-commercial vendiendo JPY</li>
-                <li style={{ marginBottom: '4px' }}>Diferencial tasas USD-JPY amplio</li>
+          <div className="grid md:grid-cols-3 gap-4 text-sm">
+            <div className="bg-white p-4 rounded-lg border border-green-200">
+              <h4 className="font-bold text-green-600 mb-2">✅ Señales Alcistas ES/NQ</h4>
+              <ul className="space-y-1 text-gray-700">
+                <li>• JPY carry cost bajo (-2% o menos)</li>
+                <li>• CHF posiciones short aumentando</li>
+                <li>• COT non-commercial vendiendo JPY</li>
+                <li>• Diferencial tasas USD-JPY amplio</li>
               </ul>
             </div>
-            <div style={{ backgroundColor: 'white', padding: '16px', borderRadius: '8px', border: '2px solid #EF4444' }}>
-              <h4 style={{ fontWeight: 'bold', color: '#EF4444', marginBottom: '10px', margin: '0 0 10px 0' }}>
-                ⚠️ Señales de Risk-Off
-              </h4>
-              <ul style={{ margin: 0, paddingLeft: '16px', color: '#374151' }}>
-                <li style={{ marginBottom: '4px' }}>Carry cost JPY extremo (+3% o más)</li>
-                <li style={{ marginBottom: '4px' }}>Unwind masivo CHF (delta >20K)</li>
-                <li style={{ marginBottom: '4px' }}>Flight-to-safety hacia JPY/CHF</li>
-                <li style={{ marginBottom: '4px' }}>Volatilidad FX aumentando</li>
+            <div className="bg-white p-4 rounded-lg border border-red-200">
+              <h4 className="font-bold text-red-600 mb-2">⚠️ Señales de Risk-Off</h4>
+              <ul className="space-y-1 text-gray-700">
+                <li>• Carry cost JPY extremo (+3% o más)</li>
+                <li>• Unwind masivo CHF (delta >20K)</li>
+                <li>• Flight-to-safety hacia JPY/CHF</li>
+                <li>• Volatilidad FX aumentando</li>
               </ul>
             </div>
-            <div style={{ backgroundColor: 'white', padding: '16px', borderRadius: '8px', border: `2px solid ${SPEC_STATS_CONFIG.colors.primary}` }}>
-              <h4 style={{ fontWeight: 'bold', color: SPEC_STATS_CONFIG.colors.primary, marginBottom: '10px', margin: '0 0 10px 0' }}>
-                🎯 Estrategias Spec Stats
-              </h4>
-              <ul style={{ margin: 0, paddingLeft: '16px', color: '#374151' }}>
-                <li style={{ marginBottom: '4px' }}>Monitor carry cost para timing</li>
-                <li style={{ marginBottom: '4px' }}>COT como confirmación dirección</li>
-                <li style={{ marginBottom: '4px' }}>Hedge con VIX en unwinds</li>
-                <li style={{ marginBottom: '4px' }}>Stop loss ajustados en volatilidad FX</li>
+            <div className="bg-white p-4 rounded-lg border" style={{ borderColor: SPEC_STATS_CONFIG.colors.primary }}>
+              <h4 className="font-bold mb-2" style={{ color: SPEC_STATS_CONFIG.colors.primary }}>🎯 Estrategias Spec Stats</h4>
+              <ul className="space-y-1 text-gray-700">
+                <li>• Monitor carry cost para timing</li>
+                <li>• COT como confirmación dirección</li>
+                <li>• Hedge con VIX en unwinds</li>
+                <li>• Stop loss ajustados en volatilidad FX</li>
               </ul>
             </div>
           </div>
@@ -971,30 +734,17 @@ const SpecStatsCOTAnalyzer = () => {
       </div>
 
       {/* Footer Spec Stats */}
-      <div style={{
-        marginTop: '30px',
-        padding: '24px',
-        borderRadius: '12px',
-        border: `2px solid ${SPEC_STATS_CONFIG.colors.primary}`,
-        backgroundColor: '#FEFBFF'
-      }}>
-        <div style={{ textAlign: 'center' }}>
+      <div className="mt-8 p-6 rounded-lg border" style={{ backgroundColor: '#F8F7FF', borderColor: SPEC_STATS_CONFIG.colors.primary }}>
+        <div className="text-center">
           <SpecStatsLogo size="h-8" />
-          <p style={{ fontSize: '0.875rem', color: '#6B7280', marginTop: '10px', margin: '10px 0 5px 0' }}>
+          <p className="text-sm text-gray-600 mt-2">
             Monitor exclusivo COT + Carry Trade para estudiantes de <strong>Spec Stats</strong>
           </p>
-          <p style={{ fontSize: '0.75rem', color: '#9CA3AF', margin: 0 }}>
-            Datos profesionales de CFTC | Análisis para trading ES/NQ | Versión Completa ✅
+          <p className="text-xs text-gray-500 mt-1">
+            Datos en tiempo real de CFTC | Análisis profesional para trading ES/NQ
           </p>
         </div>
       </div>
-      
-      <style>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   );
 };
@@ -1008,20 +758,4 @@ const SpecStatsApp = () => {
   );
 };
 
-export default SpecStatsApp;: 'wrap', gap: '20px' }}>
-            <div>
-              <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '10px', margin: 0 }}>
-                Monitor COT + Carry Trade
-              </h1>
-              <p style={{ color: '#C4B5FD', margin: 0 }}>
-                Análisis exclusivo para estudiantes de Spec Stats
-              </p>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <p style={{ fontSize: '0.9rem', color: '#C4B5FD', margin: 0 }}>Acceso Exclusivo</p>
-              <p style={{ fontWeight: '600', margin: 0 }}>JPY & CHF Trading Signals</p>
-            </div>
-          </div>
-        </div>
-        
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap
+export default SpecStatsApp;
