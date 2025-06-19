@@ -582,7 +582,6 @@ const SpecStatsCOTAnalyzer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <CarryTradeCard 
             pair="usdjpy" 
-            data={getLatestCarryData('usdjpy')} 
             title="USD/JPY Carry Cost" 
           />
           <CarryTradeCard 
@@ -716,7 +715,7 @@ const SpecStatsCOTAnalyzer = () => {
               <h4 className="font-bold text-red-600 mb-2">⚠️ Señales de Risk-Off</h4>
               <ul className="space-y-1 text-gray-700">
                 <li>• Carry cost JPY extremo (+3% o más)</li>
-                <li>• Unwind masivo CHF (delta > 20K)</li>
+                <li>• Unwind masivo CHF (delta >20K)</li>
                 <li>• Flight-to-safety hacia JPY/CHF</li>
                 <li>• Volatilidad FX aumentando</li>
               </ul>
