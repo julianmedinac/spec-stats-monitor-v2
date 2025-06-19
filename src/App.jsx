@@ -2,6 +2,241 @@ import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, ComposedChart, Area, AreaChart } from 'recharts';
 import { TrendingUp, TrendingDown, AlertTriangle, Download, RefreshCw, Wifi, WifiOff, DollarSign, Calculator, LogOut, User } from 'lucide-react';
 
+// Modificaciones para integrar datos reales en tu App.jsx existente
+
+// ================================
+// AGREGAR AL INICIO DEL ARCHIVO (después de imports)
+// ================================
+
+// Toggle para usar datos reales vs mock
+const USE_REAL_DATA = process.env.REACT_APP_USE_REAL_DATA === 'true' || false;
+
+// ================================
+// REEMPLAZAR LA FUNCIÓN fetchAllData
+// ================================
+
+const fetchAllData = async () => {
+  setLoading(true);
+  
+  try {
+    let result;
+    
+    if (USE_REAL_DATA) {
+      console.log('🌐 Obteniendo datos reales de APIs...');
+      result = await fetchAllRealData();
+      
+      if (!result.success) {
+        console.warn('⚠️ APIs fallaron, usando datos mock');
+        setAlerts(prev => [...prev, {
+          currency: 'SYSTEM',
+          type: 'warning',
+          message: 'APIs no disponibles - usando datos demo',
+          severity: 'medium',
+          category: 'SYSTEM'
+        }]);
+      }
+    } else {
+      console.log('🔧 Usando datos mock (modo desarrollo)');
+      
+      // Simular delay de API real
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const jpyData = generateMockCOTData('JPY');
+      const chfData = generateMockCOTData('CHF');
+      const usdJpyFxData = generateMockFXData('USDJPY');
+      const usdChfFxData = generateMockFXData('USDCHF');
+      
+      result = {
+        cotData: { jpy: jpyData, chf: chfData },
+        fxData: { usdjpy: usdJpyFxData, usdchf: usdChfFxData },
+        interestRates: {
+          usd_3m: 4.34,
+          jpy_3m: 0.77,
+          chf_3m: 0.96
+        },
+        success: true,
+        lastUpdate: new Date()
+      };
+    }
+    
+    // Actualizar estado con los datos obtenidos
+    setCotData(result.cotData);
+    setFxData(result.fxData);
+    setInterestRates(result.interestRates);
+    setLastUpdate(result.lastUpdate);
+    
+    // Calcular carry trade costs con datos reales
+    const usdJpyCarryCosts = calculateCarryTradeCost(
+      result.fxData.usdjpy, 
+      'USD', 
+      'JPY',
+      result.interestRates
+    );
+    const usdChfCarryCosts = calculateCarryTradeCost(
+      result.fxData.usdchf, 
+      'USD', 
+      'CHF',
+      result.interestRates
+    );
+    
+    setCarryTradeCosts({ 
+      usdjpy: usdJpyCarryCosts, 
+      usdchf: usdChfCarryCosts 
+    });
+    
+    // Generar alertas basadas en datos reales
+    const newAlerts = generateAlerts(
+      result.cotData.jpy, 
+      result.cotData.chf, 
+      usdJpyCarryCosts, 
+      usdChfCarryCosts
+    );
+    setAlerts(newAlerts);
+    
+    console.log('✅ Datos actualizados exitosamente');
+    
+  } catch (error) {
+    console.error('❌ Error en fetchAllData:', error);
+    
+    setAlerts(prev => [...prev, {
+      currency: 'SYSTEM',
+      type: 'error',
+      message: 'Error al obtener datos - usando cache',
+      severity: 'high',
+      category: 'ERROR'
+    }]);
+  } finally {
+    setLoading(false);
+  }
+};
+
+// ================================
+// ACTUALIZAR calculateCarryTradeCost para usar tasas reales
+// ================================
+
+const calculateCarryTradeCost = (fxDataArray, baseCurrency, quoteCurrency, rates = interestRates) => {
+  const baseRate = baseCurrency === 'USD' ? rates.usd_3m : 
+                   baseCurrency === 'JPY' ? rates.jpy_3m : rates.chf_3m;
+  const quoteRate = quoteCurrency === 'USD' ? rates.usd_3m : 
+                    quoteCurrency === 'JPY' ? rates.jpy_3m : rates.chf_3m;
+  
+  return fxDataArray.map(item => {
+    // Convertir tasas anuales a semanales
+    const interestDifferential = (baseRate - quoteRate) / 52;
+    const totalCarryCost = item.weeklyChange + interestDifferential;
+    
+    return {
+      ...item,
+      interestDifferential: parseFloat(interestDifferential.toFixed(4)),
+      totalCarryCost: parseFloat(totalCarryCost.toFixed(4)),
+      baseRate, 
+      quoteRate,
+      // Nuevos campos para datos reales
+      isRealData: USE_REAL_DATA,
+      dataSource: USE_REAL_DATA ? 'Alpha Vantage + FRED' : 'Mock Data'
+    };
+  });
+};
+
+// ================================
+// AGREGAR COMPONENTE DE STATUS DE DATOS
+// ================================
+
+const DataStatusIndicator = () => {
+  const statusColor = USE_REAL_DATA ? 'text-green-600' : 'text-yellow-600';
+  const StatusIcon = USE_REAL_DATA ? Wifi : WifiOff;
+  const statusText = USE_REAL_DATA ? 'Datos Reales' : 'Modo Demo';
+  
+  return (
+    <div className="flex items-center space-x-2">
+      <StatusIcon size={16} className={statusColor} />
+      <span className={`text-sm font-medium ${statusColor}`}>
+        {statusText}
+      </span>
+      {USE_REAL_DATA && (
+        <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
+      )}
+    </div>
+  );
+};
+
+// ================================
+// ACTUALIZAR HEADER PARA MOSTRAR STATUS
+// ================================
+
+// En el JSX del header, reemplazar la línea de "Modo Demo":
+{/* 
+<div className="flex items-center space-x-2 text-purple-600">
+  <Wifi size={16} />
+  <span className="text-sm">Modo Demo - Spec Stats</span>
+</div>
+*/}
+
+// Por:
+<DataStatusIndicator />
+
+// ================================
+// AGREGAR INFORMACIÓN DE ÚLTIMA ACTUALIZACIÓN MEJORADA
+// ================================
+
+const LastUpdateInfo = ({ lastUpdate, isRealData }) => {
+  if (!lastUpdate) return null;
+  
+  const timeAgo = (Date.now() - lastUpdate.getTime()) / 1000 / 60; // minutos
+  const updateText = timeAgo < 1 ? 'Ahora mismo' : 
+                     timeAgo < 60 ? `Hace ${Math.floor(timeAgo)} min` :
+                     `Hace ${Math.floor(timeAgo / 60)} hrs`;
+  
+  return (
+    <div className="flex items-center space-x-2 text-gray-600">
+      <RefreshCw size={14} />
+      <span className="text-sm">
+        Última actualización: {updateText}
+      </span>
+      {isRealData && (
+        <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+          En vivo
+        </span>
+      )}
+    </div>
+  );
+};
+
+// ================================
+// AGREGAR COMPONENTE DE CONFIGURACIÓN DE APIS
+// ================================
+
+const ApiConfigStatus = () => {
+  const hasAlphaVantage = process.env.REACT_APP_ALPHA_VANTAGE_KEY && 
+                          process.env.REACT_APP_ALPHA_VANTAGE_KEY !== 'demo';
+  const hasFred = process.env.REACT_APP_FRED_KEY && 
+                  process.env.REACT_APP_FRED_KEY !== 'demo';
+  
+  if (USE_REAL_DATA && (!hasAlphaVantage || !hasFred)) {
+    return (
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+        <div className="flex items-center space-x-2 text-yellow-800">
+          <AlertTriangle size={20} />
+          <h3 className="font-bold">Configuración de APIs Pendiente</h3>
+        </div>
+        <div className="mt-2 text-sm text-yellow-700 space-y-1">
+          {!hasAlphaVantage && (
+            <p>• Falta API key de Alpha Vantage para datos FX reales</p>
+          )}
+          {!hasFred && (
+            <p>• Falta API key de FRED para tasas de interés reales</p>
+          )}
+          <p className="font-medium mt-2">
+            📚 Ver documentación en el código para obtener API keys gratuitas
+          </p>
+        </div>
+      </div>
+    );
+  }
+  
+  return null;
+};
+
 // Configuración Spec Stats
 const SPEC_STATS_CONFIG = {
   name: "Spec Stats",
