@@ -192,16 +192,8 @@ const AccessControl = ({ children }) => {
 // Componente Principal
 const SpecStatsCOTAnalyzer = () => {
   const [cotData, setCotData] = useState({ jpy: [], chf: [] });
-  const [fxData, setFxData] = useState({ usdjpy: [], usdchf: [] });
-  const [interestRates, setInterestRates] = useState({
-    usd_3m: 4.34,
-    jpy_3m: 0.77,
-    chf_3m: 0.96
-  });
-  const [carryTradeCosts, setCarryTradeCosts] = useState({ usdjpy: [], usdchf: [] });
   const [loading, setLoading] = useState(false);
   const [lastUpdate, setLastUpdate] = useState(null);
-  const [alerts, setAlerts] = useState([]);
 
   // Generar datos mock para demostración
   const generateMockCOTData = (currency) => {
@@ -213,123 +205,16 @@ const SpecStatsCOTAnalyzer = () => {
       date.setDate(date.getDate() - (i * 7));
       
       const trend = currency === 'JPY' ? -1 : 1;
-      const leveragedLong = Math.floor(Math.random() * 30000) + 20000 + (trend * 5000);
-      const leveragedShort = Math.floor(Math.random() * 40000) + 30000 - (trend * 5000);
-      const assetManagerLong = Math.floor(Math.random() * 25000) + 15000;
-      const assetManagerShort = Math.floor(Math.random() * 20000) + 10000;
-      const dealerLong = Math.floor(Math.random() * 50000) + 40000;
-      const dealerShort = Math.floor(Math.random() * 60000) + 50000;
-      
-      const netLeveraged = leveragedLong - leveragedShort;
-      const netAssetManager = assetManagerLong - assetManagerShort;
-      const netDealer = dealerLong - dealerShort;
-      const totalNet = netLeveraged + netAssetManager + netDealer;
+      const totalNet = Math.floor(Math.random() * 50000) + (trend * 10000);
       
       data.push({
         date: date.toISOString().split('T')[0],
-        leveragedLong, leveragedShort, assetManagerLong, assetManagerShort,
-        dealerLong, dealerShort, netLeveraged, netAssetManager, netDealer, totalNet,
-        deltaNet: 0, deltaLeveraged: 0, deltaAssetManager: 0
-      });
-    }
-    
-    for (let i = 1; i < data.length; i++) {
-      data[i].deltaNet = data[i].totalNet - data[i-1].totalNet;
-      data[i].deltaLeveraged = data[i].netLeveraged - data[i-1].netLeveraged;
-      data[i].deltaAssetManager = data[i].netAssetManager - data[i-1].netAssetManager;
-    }
-    
-    return data;
-  };
-
-  const generateMockFXData = (pair) => {
-    const data = [];
-    const baseDate = new Date();
-    let baseRate = pair === 'USDJPY' ? 150.0 : 0.92;
-    
-    for (let i = 12; i >= 0; i--) {
-      const date = new Date(baseDate);
-      date.setDate(date.getDate() - (i * 7));
-      
-      const change = (Math.random() - 0.5) * 0.04;
-      baseRate *= (1 + change);
-      
-      data.push({
-        date: date.toISOString().split('T')[0],
-        rate: parseFloat(baseRate.toFixed(4)),
-        weeklyChange: parseFloat((change * 100).toFixed(2)),
-        weeklyChangeAbs: parseFloat((baseRate * change).toFixed(4))
+        totalNet,
+        deltaNet: i > 0 ? Math.floor(Math.random() * 20000) - 10000 : 0
       });
     }
     
     return data;
-  };
-
-  const calculateCarryTradeCost = (fxDataArray, baseCurrency, quoteCurrency) => {
-    const baseRate = baseCurrency === 'USD' ? interestRates.usd_3m : 
-                     baseCurrency === 'JPY' ? interestRates.jpy_3m : interestRates.chf_3m;
-    const quoteRate = quoteCurrency === 'USD' ? interestRates.usd_3m : 
-                      quoteCurrency === 'JPY' ? interestRates.jpy_3m : interestRates.chf_3m;
-    
-    return fxDataArray.map(item => {
-      const interestDifferential = (baseRate - quoteRate) / 52;
-      const totalCarryCost = item.weeklyChange + interestDifferential;
-      
-      return {
-        ...item,
-        interestDifferential: parseFloat(interestDifferential.toFixed(4)),
-        totalCarryCost: parseFloat(totalCarryCost.toFixed(4)),
-        baseRate, quoteRate
-      };
-    });
-  };
-
-  const generateAlerts = (jpyData, chfData, jpyCarry, chfCarry) => {
-    const alerts = [];
-    
-    if (jpyData.length > 0) {
-      const latestJPY = jpyData[jpyData.length - 1];
-      const latestJPYCarry = jpyCarry[jpyCarry.length - 1];
-      
-      if (Math.abs(latestJPY.deltaNet) > 15000) {
-        alerts.push({
-          currency: 'JPY', type: latestJPY.deltaNet > 0 ? 'bullish' : 'bearish',
-          message: `COT cambio significativo: ${latestJPY.deltaNet > 0 ? '+' : ''}${latestJPY.deltaNet.toLocaleString()}`,
-          severity: 'high', category: 'COT'
-        });
-      }
-      
-      if (Math.abs(latestJPYCarry.totalCarryCost) > 2.0) {
-        alerts.push({
-          currency: 'JPY', type: latestJPYCarry.totalCarryCost > 0 ? 'expensive' : 'cheap',
-          message: `Carry cost extremo: ${latestJPYCarry.totalCarryCost.toFixed(2)}%`,
-          severity: latestJPYCarry.totalCarryCost > 3 ? 'high' : 'medium', category: 'CARRY'
-        });
-      }
-    }
-    
-    if (chfData.length > 0) {
-      const latestCHF = chfData[chfData.length - 1];
-      const latestCHFCarry = chfCarry[chfCarry.length - 1];
-      
-      if (Math.abs(latestCHF.deltaNet) > 15000) {
-        alerts.push({
-          currency: 'CHF', type: latestCHF.deltaNet > 0 ? 'bullish' : 'bearish',
-          message: `COT cambio significativo: ${latestCHF.deltaNet > 0 ? '+' : ''}${latestCHF.deltaNet.toLocaleString()}`,
-          severity: 'high', category: 'COT'
-        });
-      }
-      
-      if (Math.abs(latestCHFCarry.totalCarryCost) > 2.0) {
-        alerts.push({
-          currency: 'CHF', type: latestCHFCarry.totalCarryCost > 0 ? 'expensive' : 'cheap',
-          message: `Carry cost extremo: ${latestCHFCarry.totalCarryCost.toFixed(2)}%`,
-          severity: latestCHFCarry.totalCarryCost > 3 ? 'high' : 'medium', category: 'CARRY'
-        });
-      }
-    }
-    
-    return alerts;
   };
 
   const fetchAllData = async () => {
@@ -340,18 +225,9 @@ const SpecStatsCOTAnalyzer = () => {
       
       const jpyData = generateMockCOTData('JPY');
       const chfData = generateMockCOTData('CHF');
-      const usdJpyFxData = generateMockFXData('USDJPY');
-      const usdChfFxData = generateMockFXData('USDCHF');
-      const usdJpyCarryCosts = calculateCarryTradeCost(usdJpyFxData, 'USD', 'JPY');
-      const usdChfCarryCosts = calculateCarryTradeCost(usdChfFxData, 'USD', 'CHF');
       
       setCotData({ jpy: jpyData, chf: chfData });
-      setFxData({ usdjpy: usdJpyFxData, usdchf: usdChfFxData });
-      setCarryTradeCosts({ usdjpy: usdJpyCarryCosts, usdchf: usdChfCarryCosts });
       setLastUpdate(new Date());
-      
-      const newAlerts = generateAlerts(jpyData, chfData, usdJpyCarryCosts, usdChfCarryCosts);
-      setAlerts(newAlerts);
       
     } catch (error) {
       console.error('Error:', error);
@@ -365,111 +241,6 @@ const SpecStatsCOTAnalyzer = () => {
   }, []);
 
   const formatNumber = (num) => num?.toLocaleString() || '0';
-  const formatPercent = (num) => `${num > 0 ? '+' : ''}${num?.toFixed(2)}%` || '0.00%';
-  const getLatestData = (currency) => {
-    const data = cotData[currency.toLowerCase()];
-    return data && data.length > 0 ? data[data.length - 1] : null;
-  };
-  const getLatestCarryData = (pair) => {
-    const data = carryTradeCosts[pair];
-    return data && data.length > 0 ? data[data.length - 1] : null;
-  };
-
-  const CarryTradeCard = ({ pair, data, title }) => {
-    if (!data) return null;
-    
-    const costColor = data.totalCarryCost > 0 ? 'text-red-600' : 'text-green-600';
-    const CostIcon = data.totalCarryCost > 0 ? TrendingUp : TrendingDown;
-    
-    return (
-      <div className="bg-white rounded-lg shadow-lg p-6 border-l-4" style={{ borderColor: SPEC_STATS_CONFIG.colors.primary }}>
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-bold text-gray-800">{title}</h3>
-          <div className="flex items-center space-x-2">
-            <CostIcon className={costColor.replace('text-', 'text-')} size={20} />
-            <span className={`text-sm font-semibold ${costColor}`}>
-              {formatPercent(data.totalCarryCost)}
-            </span>
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div>
-            <p className="text-sm text-gray-600">Spot Rate</p>
-            <p className="text-lg font-bold">{data.rate}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600">Cambio Semanal</p>
-            <p className={`text-lg font-bold ${data.weeklyChange > 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {formatPercent(data.weeklyChange)}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600">Diferencial Tasas</p>
-            <p className="text-lg font-bold">{formatPercent(data.interestDifferential)}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600">Costo Total Carry</p>
-            <p className={`text-lg font-bold ${costColor}`}>
-              {formatPercent(data.totalCarryCost)}
-            </p>
-          </div>
-        </div>
-        
-        <div className="text-xs text-gray-500 space-y-1">
-          <p>Base: {data.baseRate?.toFixed(2)}% | Quote: {data.quoteRate?.toFixed(2)}%</p>
-          <p>Fecha: {data.date}</p>
-        </div>
-      </div>
-    );
-  };
-
-  const CurrencyCard = ({ currency, data }) => {
-    if (!data) return null;
-    
-    return (
-      <div className="bg-white rounded-lg shadow-lg p-6 border-l-4" style={{ borderColor: SPEC_STATS_CONFIG.colors.primary }}>
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-bold text-gray-800">{currency}</h3>
-          <div className="flex items-center space-x-2">
-            {data.deltaNet > 0 ? (
-              <TrendingUp className="text-green-500" size={20} />
-            ) : (
-              <TrendingDown className="text-red-500" size={20} />
-            )}
-            <span className={`text-sm font-semibold ${data.deltaNet > 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {data.deltaNet > 0 ? '+' : ''}{formatNumber(data.deltaNet)}
-            </span>
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div>
-            <p className="text-sm text-gray-600">Posición Neta Total</p>
-            <p className="text-lg font-bold">{formatNumber(data.totalNet)}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600">Delta Semanal</p>
-            <p className={`text-lg font-bold ${data.deltaNet > 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {data.deltaNet > 0 ? '+' : ''}{formatNumber(data.deltaNet)}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600">Non-Commercial Neto</p>
-            <p className="text-lg font-bold">{formatNumber(data.netLeveraged)}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600">Other Reportable Neto</p>
-            <p className="text-lg font-bold">{formatNumber(data.netAssetManager)}</p>
-          </div>
-        </div>
-        
-        <div className="text-xs text-gray-500">
-          Fecha reporte: {data.date}
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div className="max-w-7xl mx-auto p-6 bg-gray-50 min-h-screen">
@@ -497,7 +268,7 @@ const SpecStatsCOTAnalyzer = () => {
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2 text-purple-600">
               <Wifi size={16} />
-              <span className="text-sm">Modo Demo - Spec Stats</span>
+              <span className="text-sm">Demo - Spec Stats</span>
             </div>
             {lastUpdate && (
               <p className="text-sm text-gray-600">
@@ -517,223 +288,26 @@ const SpecStatsCOTAnalyzer = () => {
         </div>
       </div>
 
-      {/* Panel de Tasas de Interés */}
-      <div className="bg-purple-50 p-6 rounded-lg mb-8 border border-purple-200">
-        <h3 className="text-lg font-bold mb-4 flex items-center" style={{ color: SPEC_STATS_CONFIG.colors.primary }}>
-          <Calculator className="mr-2" size={20} />
-          📊 Tasas de Interés 3M Actuales
-        </h3>
-        <div className="grid grid-cols-3 gap-4 text-center">
-          <div className="bg-white p-4 rounded-lg border border-purple-100">
-            <p className="text-sm text-gray-600">🇺🇸 USD T-Bill 3M</p>
-            <p className="text-2xl font-bold" style={{ color: SPEC_STATS_CONFIG.colors.primary }}>
-              {interestRates.usd_3m}%
-            </p>
-          </div>
-          <div className="bg-white p-4 rounded-lg border border-purple-100">
-            <p className="text-sm text-gray-600">🇯🇵 JPY TIBOR 3M</p>
-            <p className="text-2xl font-bold text-red-600">{interestRates.jpy_3m}%</p>
-          </div>
-          <div className="bg-white p-4 rounded-lg border border-purple-100">
-            <p className="text-sm text-gray-600">🇨🇭 CHF SARON 3M</p>
-            <p className="text-2xl font-bold text-green-600">{interestRates.chf_3m}%</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Alertas */}
-      {alerts.length > 0 && (
-        <div className="mb-6">
-          <h2 className="text-xl font-bold mb-3 flex items-center">
-            <AlertTriangle className="mr-2 text-orange-500" size={20} />
-            🚨 Alertas de Trading - Spec Stats
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {alerts.map((alert, index) => (
-              <div key={index} className={`p-4 rounded-lg border-l-4 ${
-                alert.severity === 'high' ? 'bg-red-50 border-red-400' : 
-                alert.severity === 'medium' ? 'bg-yellow-50 border-yellow-400' : 
-                'bg-green-50 border-green-400'
-              }`}>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="font-bold text-lg">{alert.currency}</p>
-                    <p className="text-sm">{alert.message}</p>
-                  </div>
-                  <span 
-                    className="px-2 py-1 rounded text-xs font-bold text-white"
-                    style={{ backgroundColor: alert.category === 'COT' ? SPEC_STATS_CONFIG.colors.primary : SPEC_STATS_CONFIG.colors.secondary }}
-                  >
-                    {alert.category}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Cards de Carry Trade */}
-      <div className="mb-8">
-        <h2 className="text-xl font-bold mb-4 flex items-center">
-          <DollarSign className="mr-2 text-green-500" size={20} />
-          💰 Costos de Fondeo Carry Trade (Semanal)
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <CarryTradeCard 
-            pair="usdjpy" 
-            title="USD/JPY Carry Cost" 
-          />
-          <CarryTradeCard 
-            pair="usdchf" 
-            data={getLatestCarryData('usdchf')} 
-            title="USD/CHF Carry Cost" 
-          />
-        </div>
-      </div>
-
-      {/* Cards de COT */}
+      {/* Cards básicos */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <CurrencyCard currency="JPY" data={getLatestData('jpy')} />
-        <CurrencyCard currency="CHF" data={getLatestData('chf')} />
-      </div>
-
-      {/* Gráficos */}
-      <div className="space-y-8">
-        {/* Gráfico de Costos de Carry Trade */}
-        <div className="bg-white p-6 rounded-lg shadow-lg">
-          <h2 className="text-xl font-bold mb-4">💸 Evolución Costos de Carry Trade</h2>
-          <ResponsiveContainer width="100%" height={400}>
-            <ComposedChart>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
-                dataKey="date" 
-                tickFormatter={(date) => new Date(date).toLocaleDateString()}
-              />
-              <YAxis yAxisId="left" label={{ value: 'Costo %', angle: -90, position: 'insideLeft' }} />
-              <YAxis yAxisId="right" orientation="right" label={{ value: 'FX Rate', angle: 90, position: 'insideRight' }} />
-              <Tooltip 
-                labelFormatter={(date) => new Date(date).toLocaleDateString()}
-                formatter={(value, name) => [
-                  name.includes('Rate') ? value : `${value}%`, 
-                  name
-                ]}
-              />
-              <Legend />
-              <Area 
-                yAxisId="left"
-                data={carryTradeCosts.usdjpy}
-                type="monotone" 
-                dataKey="totalCarryCost" 
-                fill="#8884d8" 
-                fillOpacity={0.3}
-                stroke="#8884d8"
-                strokeWidth={2}
-                name="USD/JPY Carry Cost %" 
-              />
-              <Area 
-                yAxisId="left"
-                data={carryTradeCosts.usdchf}
-                type="monotone" 
-                dataKey="totalCarryCost" 
-                fill="#82ca9d" 
-                fillOpacity={0.3}
-                stroke="#82ca9d"
-                strokeWidth={2}
-                name="USD/CHF Carry Cost %" 
-              />
-              <Line 
-                yAxisId="right"
-                data={fxData.usdjpy}
-                type="monotone" 
-                dataKey="rate" 
-                stroke="#ff7300" 
-                strokeWidth={1}
-                strokeDasharray="5 5"
-                name="USD/JPY Rate"
-                dot={false}
-              />
-            </ComposedChart>
-          </ResponsiveContainer>
+        <div className="bg-white rounded-lg shadow-lg p-6 border-l-4" style={{ borderColor: SPEC_STATS_CONFIG.colors.primary }}>
+          <h3 className="text-xl font-bold text-gray-800">JPY</h3>
+          <p className="text-2xl font-bold mt-2">
+            {cotData.jpy.length > 0 ? formatNumber(cotData.jpy[cotData.jpy.length - 1]?.totalNet) : 'Cargando...'}
+          </p>
+          <p className="text-sm text-gray-600">Posición Neta Total</p>
         </div>
-
-        {/* Gráfico tradicional COT */}
-        <div className="bg-white p-6 rounded-lg shadow-lg">
-          <h2 className="text-xl font-bold mb-4">📈 Evolución Posicionamiento Neto COT</h2>
-          <ResponsiveContainer width="100%" height={400}>
-            <LineChart>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
-                dataKey="date" 
-                domain={['dataMin', 'dataMax']}
-                tickFormatter={(date) => new Date(date).toLocaleDateString()}
-              />
-              <YAxis />
-              <Tooltip 
-                labelFormatter={(date) => new Date(date).toLocaleDateString()}
-                formatter={(value, name) => [formatNumber(value), name]}
-              />
-              <Legend />
-              <Line 
-                data={cotData.jpy}
-                type="monotone" 
-                dataKey="totalNet" 
-                stroke={SPEC_STATS_CONFIG.colors.primary}
-                strokeWidth={2}
-                name="JPY Net"
-                dot={{ r: 4 }}
-              />
-              <Line 
-                data={cotData.chf}
-                type="monotone" 
-                dataKey="totalNet" 
-                stroke={SPEC_STATS_CONFIG.colors.secondary}
-                strokeWidth={2}
-                name="CHF Net"
-                dot={{ r: 4 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Panel Educativo para Spec Stats */}
-        <div className="bg-gradient-to-r from-purple-50 to-gray-50 p-6 rounded-lg border border-purple-200">
-          <h3 className="text-xl font-bold mb-4" style={{ color: SPEC_STATS_CONFIG.colors.primary }}>
-            📚 Guía de Interpretación Spec Stats - ES/NQ Trading
-          </h3>
-          <div className="grid md:grid-cols-3 gap-4 text-sm">
-            <div className="bg-white p-4 rounded-lg border border-green-200">
-              <h4 className="font-bold text-green-600 mb-2">✅ Señales Alcistas ES/NQ</h4>
-              <ul className="space-y-1 text-gray-700">
-                <li>• JPY carry cost bajo (-2% o menos)</li>
-                <li>• CHF posiciones short aumentando</li>
-                <li>• COT non-commercial vendiendo JPY</li>
-                <li>• Diferencial tasas USD-JPY amplio</li>
-              </ul>
-            </div>
-            <div className="bg-white p-4 rounded-lg border border-red-200">
-              <h4 className="font-bold text-red-600 mb-2">⚠️ Señales de Risk-Off</h4>
-              <ul className="space-y-1 text-gray-700">
-                <li>• Carry cost JPY extremo (+3% o más)</li>
-                <li>• Unwind masivo CHF (delta >20K)</li>
-                <li>• Flight-to-safety hacia JPY/CHF</li>
-                <li>• Volatilidad FX aumentando</li>
-              </ul>
-            </div>
-            <div className="bg-white p-4 rounded-lg border" style={{ borderColor: SPEC_STATS_CONFIG.colors.primary }}>
-              <h4 className="font-bold mb-2" style={{ color: SPEC_STATS_CONFIG.colors.primary }}>🎯 Estrategias Spec Stats</h4>
-              <ul className="space-y-1 text-gray-700">
-                <li>• Monitor carry cost para timing</li>
-                <li>• COT como confirmación dirección</li>
-                <li>• Hedge con VIX en unwinds</li>
-                <li>• Stop loss ajustados en volatilidad FX</li>
-              </ul>
-            </div>
-          </div>
+        
+        <div className="bg-white rounded-lg shadow-lg p-6 border-l-4" style={{ borderColor: SPEC_STATS_CONFIG.colors.primary }}>
+          <h3 className="text-xl font-bold text-gray-800">CHF</h3>
+          <p className="text-2xl font-bold mt-2">
+            {cotData.chf.length > 0 ? formatNumber(cotData.chf[cotData.chf.length - 1]?.totalNet) : 'Cargando...'}
+          </p>
+          <p className="text-sm text-gray-600">Posición Neta Total</p>
         </div>
       </div>
 
-      {/* Footer Spec Stats */}
+      {/* Footer */}
       <div className="mt-8 p-6 rounded-lg border" style={{ backgroundColor: '#F8F7FF', borderColor: SPEC_STATS_CONFIG.colors.primary }}>
         <div className="text-center">
           <SpecStatsLogo size="h-8" />
@@ -741,7 +315,7 @@ const SpecStatsCOTAnalyzer = () => {
             Monitor exclusivo COT + Carry Trade para estudiantes de <strong>Spec Stats</strong>
           </p>
           <p className="text-xs text-gray-500 mt-1">
-            Datos en tiempo real de CFTC | Análisis profesional para trading ES/NQ
+            ¡Funcionando! 🎉 - Próxima versión con gráficos completos
           </p>
         </div>
       </div>
