@@ -278,71 +278,70 @@ const SpecStatsCOTAnalyzer = () => {
   };
 
   // Función principal para obtener TODOS los datos 100% REALES
-  const fetchAllData = async () => {
-    setLoading(true);
-    setDataError(null);
+  // REEMPLAZAR SOLO LA FUNCIÓN fetchAllData en tu App.jsx
+
+const fetchAllData = async () => {
+  setLoading(true);
+  setDataError(null);
+  
+  try {
+    console.log('🚀 Iniciando descarga de datos 100% REALES...');
+    console.log('📊 Usando endpoints de backend (sin variables de entorno)');
     
-    try {
-      console.log('🚀 Iniciando descarga de datos 100% REALES...');
-      console.log('📊 Fuentes:');
-      console.log('   - COT: CFTC Official via Python cot-reports library');
-      console.log('   - FX: Alpha Vantage Official API');
-      console.log('   - Rates: FRED Official API');
-      
-      // Ejecutar todas las llamadas a APIs REALES en paralelo
-      const [jpyData, chfData, usdJpyFxData, usdChfFxData, rates] = await Promise.all([
-        fetchRealCOTData('JPY'),  // 🐍 Python + cot-reports
-        fetchRealCOTData('CHF'),  // 🐍 Python + cot-reports
-        fetchRealFXData('USDJPY'), // Alpha Vantage
-        fetchRealFXData('USDCHF'), // Alpha Vantage
-        fetchRealInterestRates()   // FRED
-      ]);
-      
-      console.log('🎉 TODOS LOS DATOS 100% REALES OBTENIDOS EXITOSAMENTE');
-      console.log('📈 COT JPY (CFTC Official):', jpyData.length, 'registros');
-      console.log('📈 COT CHF (CFTC Official):', chfData.length, 'registros');
-      console.log('💱 FX USDJPY (Alpha Vantage):', usdJpyFxData.length, 'registros');
-      console.log('💱 FX USDCHF (Alpha Vantage):', usdChfFxData.length, 'registros');
-      console.log('🏦 Interest Rates (FRED):', rates);
-      
-      // Verificar calidad de datos COT
-      if (jpyData.length === 0 || chfData.length === 0) {
-        throw new Error('No se recibieron datos COT válidos');
-      }
-      
-      // Actualizar estado con datos 100% REALES
-      setCotData({ jpy: jpyData, chf: chfData });
-      setFxData({ usdjpy: usdJpyFxData, usdchf: usdChfFxData });
-      setInterestRates(rates);
-      setLastUpdate(new Date());
-      
-      // Calcular carry trade costs con datos 100% REALES
-      const usdJpyCarryCosts = calculateCarryTradeCost(usdJpyFxData, 'USD', 'JPY', rates);
-      const usdChfCarryCosts = calculateCarryTradeCost(usdChfFxData, 'USD', 'CHF', rates);
-      
-      setCarryTradeCosts({ usdjpy: usdJpyCarryCosts, usdchf: usdChfCarryCosts });
-      
-      // Generar alertas basadas en datos 100% REALES
-      const newAlerts = generateAlerts(jpyData, chfData, usdJpyCarryCosts, usdChfCarryCosts);
-      setAlerts(newAlerts);
-      
-      console.log('✅ Dashboard actualizado con datos 100% REALES de CFTC + Alpha Vantage + FRED');
-      
-    } catch (error) {
-      console.error('💥 ERROR obteniendo datos 100% REALES:', error);
-      setDataError(error.message);
-      
-      setAlerts([{
-        currency: 'SYSTEM',
-        type: 'error',
-        message: `Error obteniendo datos 100% REALES: ${error.message}`,
-        severity: 'high',
-        category: 'ERROR'
-      }]);
-    } finally {
-      setLoading(false);
+    // Para desarrollo local: usar endpoints directos
+    const [jpyData, chfData, usdJpyFxData, usdChfFxData, rates] = await Promise.all([
+      fetchRealCOTData('JPY'),   // Usará /api/cot-real
+      fetchRealCOTData('CHF'),   // Usará /api/cot-real
+      fetchRealFXData('USDJPY'), // Usará /api/fx-data
+      fetchRealFXData('USDCHF'), // Usará /api/fx-data
+      fetchRealInterestRates()   // Usará /api/interest-rates
+    ]);
+    
+    console.log('🎉 TODOS LOS DATOS 100% REALES OBTENIDOS EXITOSAMENTE');
+    console.log('📈 COT JPY (CFTC Official):', jpyData.length, 'registros');
+    console.log('📈 COT CHF (CFTC Official):', chfData.length, 'registros');
+    console.log('💱 FX USDJPY (Alpha Vantage):', usdJpyFxData.length, 'registros');
+    console.log('💱 FX USDCHF (Alpha Vantage):', usdChfFxData.length, 'registros');
+    console.log('🏦 Interest Rates (FRED):', rates);
+    
+    // Verificar calidad de datos COT
+    if (jpyData.length === 0 || chfData.length === 0) {
+      throw new Error('No se recibieron datos COT válidos');
     }
-  };
+    
+    // Actualizar estado con datos 100% REALES
+    setCotData({ jpy: jpyData, chf: chfData });
+    setFxData({ usdjpy: usdJpyFxData, usdchf: usdChfFxData });
+    setInterestRates(rates);
+    setLastUpdate(new Date());
+    
+    // Calcular carry trade costs con datos 100% REALES
+    const usdJpyCarryCosts = calculateCarryTradeCost(usdJpyFxData, 'USD', 'JPY', rates);
+    const usdChfCarryCosts = calculateCarryTradeCost(usdChfFxData, 'USD', 'CHF', rates);
+    
+    setCarryTradeCosts({ usdjpy: usdJpyCarryCosts, usdchf: usdChfCarryCosts });
+    
+    // Generar alertas basadas en datos 100% REALES
+    const newAlerts = generateAlerts(jpyData, chfData, usdJpyCarryCosts, usdChfCarryCosts);
+    setAlerts(newAlerts);
+    
+    console.log('✅ Dashboard actualizado con datos 100% REALES de CFTC + Alpha Vantage + FRED');
+    
+  } catch (error) {
+    console.error('💥 ERROR obteniendo datos 100% REALES:', error);
+    setDataError(error.message);
+    
+    setAlerts([{
+      currency: 'SYSTEM',
+      type: 'error',
+      message: `Error obteniendo datos 100% REALES: ${error.message}`,
+      severity: 'high',
+      category: 'ERROR'
+    }]);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const calculateCarryTradeCost = (fxDataArray, baseCurrency, quoteCurrency, rates = interestRates) => {
     const baseRate = baseCurrency === 'USD' ? rates.usd_3m : 
