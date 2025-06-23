@@ -821,7 +821,7 @@ const fetchAllData = async () => {
               <h4 className="font-bold text-red-600 mb-2">⚠️ Señales de Risk-Off</h4>
               <ul className="space-y-1 text-gray-700">
                 <li>• Carry cost JPY extremo (+3% o más)</li>
-                <li>• Unwind masivo CHF (delta >20K)</li>
+                <li>• Unwind masivo CHF (delta &gt;20K)</li>
                 <li>• Flight-to-safety hacia JPY/CHF</li>
                 <li>• Volatilidad FX aumentando</li>
               </ul>
