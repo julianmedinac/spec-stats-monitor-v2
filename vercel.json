@@ -18,3 +18,23 @@
     }
   ]
 }
+
+{
+  "functions": {
+    "api/cot-real.py": {
+      "runtime": "python3.9"
+    },
+    "api/fx-data.js": {
+      "runtime": "nodejs18.x"
+    },
+    "api/interest-rates.js": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    }
+  ]
+}
