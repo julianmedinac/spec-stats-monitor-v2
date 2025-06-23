@@ -1,40 +1,45 @@
 {
+  "version": 2,
+  "functions": {
+    "api/cot-real.py": {
+      "runtime": "python3.9",
+      "maxDuration": 30
+    },
+    "api/fx-data.js": {
+      "runtime": "nodejs18.x",
+      "maxDuration": 15
+    },
+    "api/interest-rates.js": {
+      "runtime": "nodejs18.x",
+      "maxDuration": 15
+    }
+  },
   "builds": [
     {
       "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
+      "use": "@vercel/static-build"
     }
   ],
   "routes": [
     {
-      "handle": "filesystem"
+      "src": "/api/cot-real",
+      "dest": "/api/cot-real.py"
+    },
+    {
+      "src": "/api/fx-data",
+      "dest": "/api/fx-data.js"
+    },
+    {
+      "src": "/api/interest-rates", 
+      "dest": "/api/interest-rates.js"
     },
     {
       "src": "/(.*)",
-      "dest": "/index.html"
+      "dest": "/$1"
     }
-  ]
-}
-
-{
-  "functions": {
-    "api/cot-real.py": {
-      "runtime": "python3.9"
-    },
-    "api/fx-data.js": {
-      "runtime": "nodejs18.x"
-    },
-    "api/interest-rates.js": {
-      "runtime": "nodejs18.x"
-    }
-  },
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/api/$1"
-    }
-  ]
+  ],
+  "env": {
+    "ALPHA_VANTAGE_KEY": "@alpha_vantage_key",
+    "FRED_KEY": "@fred_key"
+  }
 }
