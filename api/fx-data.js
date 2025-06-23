@@ -1,7 +1,4 @@
-// ================================
-// CREAR ARCHIVO: api/fx-data.js
-// ================================
-
+// api/fx-data.js
 export default async function handler(req, res) {
   // Habilitar CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -20,11 +17,11 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Pair must be USDJPY or USDCHF' });
     }
 
-    // Usar tu API key de Alpha Vantage
-    const API_KEY = process.env.ALPHA_VANTAGE_KEY; // En Vercel env vars
+    // Usar tu API key de Alpha Vantage desde variables de entorno de Vercel
+    const API_KEY = process.env.ALPHA_VANTAGE_KEY;
     
     if (!API_KEY) {
-      throw new Error('Alpha Vantage API key not configured');
+      throw new Error('Alpha Vantage API key not configured in Vercel');
     }
 
     const symbol = 'USD';
