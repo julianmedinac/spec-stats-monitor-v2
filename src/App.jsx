@@ -2,12 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, ComposedChart, Area, AreaChart } from 'recharts';
 import { TrendingUp, TrendingDown, AlertTriangle, Download, RefreshCw, Wifi, WifiOff, DollarSign, Calculator, LogOut, User } from 'lucide-react';
 
-// TEMPORAL - para verificar variables
-console.log('API Keys Check:', {
-  alpha: process.env.REACT_APP_ALPHA_VANTAGE_KEY,
-  fred: process.env.REACT_APP_FRED_KEY
-});
-
 // Configuración Spec Stats
 const SPEC_STATS_CONFIG = {
   name: "Spec Stats",
@@ -28,12 +22,6 @@ const SPEC_STATS_CONFIG = {
     "demo@specstats.com"
     // Agregar emails reales después
   ]
-};
-
-// Códigos CFTC para futures de divisas
-const CFTC_COMMODITY_CODES = {
-  JPY: '097741', // Japanese Yen futures
-  CHF: '092741'  // Swiss Franc futures
 };
 
 // Componente de Logo Spec Stats
@@ -116,7 +104,7 @@ const AccessControl = ({ children }) => {
             </p>
             <div className="mt-4 p-3 bg-purple-50 rounded-lg border border-purple-200">
               <p className="text-sm text-purple-700 font-semibold">
-                🎯 Monitor Exclusivo de COTs CFTC + Carry Trade Costs
+                🎯 Monitor Exclusivo de COTs CFTC + Carry Trade Costs - 100% Datos Reales
               </p>
             </div>
           </div>
@@ -216,278 +204,138 @@ const SpecStatsCOTAnalyzer = () => {
   const [alerts, setAlerts] = useState([]);
   const [dataError, setDataError] = useState(null);
 
-  // Función para obtener datos COT reales de CFTC
+  // Función para obtener datos COT 100% REALES usando Python + cot-reports
   const fetchRealCOTData = async (currency) => {
     try {
-      const commodityCode = CFTC_COMMODITY_CODES[currency];
-      console.log(`Fetching real COT data for ${currency}...`);
+      console.log(`🐍 Fetching 100% REAL COT data for ${currency} using Python cot-reports library...`);
       
-      // Usar proxy CORS para acceder a datos CFTC
-      const currentYear = new Date().getFullYear();
-      const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(
-        `https://www.cftc.gov/sites/default/files/files/dea/cotdata/legacy_fut/deacot${currentYear}.txt`
-      )}`;
+      const response = await fetch(`/api/cot-real?currency=${currency}`);
+      const result = await response.json();
       
-      const response = await fetch(proxyUrl);
-      
-      if (!response.ok) {
-        throw new Error(`CFTC API error: ${response.status}`);
+      if (!result.success) {
+        throw new Error(result.error || 'Error fetching REAL COT data');
       }
       
-      const textData = await response.text();
-      return parseCFTCData(textData, commodityCode);
+      console.log(`✅ 100% REAL COT data received for ${currency}:`, {
+        records: result.records_count,
+        source: result.source,
+        timestamp: result.timestamp
+      });
+      
+      // Validar que tenemos datos
+      if (!result.data || result.data.length === 0) {
+        throw new Error(`No REAL COT data available for ${currency}`);
+      }
+      
+      return result.data;
       
     } catch (error) {
-      console.error(`Error fetching COT data for ${currency}:`, error);
-      throw new Error(`No se pudieron obtener datos COT para ${currency}: ${error.message}`);
+      console.error(`❌ Error fetching 100% REAL COT data for ${currency}:`, error);
+      throw new Error(`No se pudieron obtener datos COT 100% REALES para ${currency}: ${error.message}`);
     }
   };
 
-  // Parser para datos CFTC en formato texto
-  const parseCFTCData = (textData, commodityCode) => {
-    const lines = textData.split('\n');
-    const cotData = [];
-    
-    lines.forEach(line => {
-      const columns = line.split(',');
-      
-      if (columns.length >= 12 && columns[2]?.trim() === commodityCode) {
-        const date = columns[2]?.trim();
-        const leveragedLong = parseInt(columns[7]) || 0;
-        const leveragedShort = parseInt(columns[8]) || 0;
-        const assetManagerLong = parseInt(columns[10]) || 0;
-        const assetManagerShort = parseInt(columns[11]) || 0;
-        const dealerLong = parseInt(columns[4]) || 0;
-        const dealerShort = parseInt(columns[5]) || 0;
-        
-        const netLeveraged = leveragedLong - leveragedShort;
-        const netAssetManager = assetManagerLong - assetManagerShort;
-        const netDealer = dealerLong - dealerShort;
-        const totalNet = netLeveraged + netAssetManager + netDealer;
-        
-        cotData.push({
-          date: formatCFTCDate(date),
-          leveragedLong, leveragedShort,
-          assetManagerLong, assetManagerShort,
-          dealerLong, dealerShort,
-          netLeveraged, netAssetManager, netDealer,
-          totalNet,
-          deltaNet: 0, deltaLeveraged: 0, deltaAssetManager: 0
-        });
-      }
-    });
-    
-    // Ordenar por fecha y calcular deltas
-    cotData.sort((a, b) => new Date(a.date) - new Date(b.date));
-    
-    for (let i = 1; i < cotData.length; i++) {
-      cotData[i].deltaNet = cotData[i].totalNet - cotData[i-1].totalNet;
-      cotData[i].deltaLeveraged = cotData[i].netLeveraged - cotData[i-1].netLeveraged;
-      cotData[i].deltaAssetManager = cotData[i].netAssetManager - cotData[i-1].netAssetManager;
-    }
-    
-    return cotData.slice(-13); // Últimas 13 semanas
-  };
-
-  // Formatear fecha CFTC a formato ISO
-  const formatCFTCDate = (cftcDate) => {
-    if (!cftcDate || cftcDate.length !== 6) return new Date().toISOString().split('T')[0];
-    
-    const year = '20' + cftcDate.substring(0, 2);
-    const month = cftcDate.substring(2, 4);
-    const day = cftcDate.substring(4, 6);
-    return `${year}-${month}-${day}`;
-  };
-
-  // Función para obtener datos FX reales
+  // Función para obtener datos FX REALES via proxy
   const fetchRealFXData = async (pair) => {
     try {
-      const API_KEY = process.env.REACT_APP_ALPHA_VANTAGE_KEY;
+      console.log(`🌐 Fetching REAL FX data for ${pair} from Alpha Vantage...`);
       
-      if (!API_KEY || API_KEY === 'demo') {
-        throw new Error('API key de Alpha Vantage requerida');
+      const response = await fetch(`/api/fx-data?pair=${pair}`);
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Error fetching FX data');
       }
       
-      console.log(`Fetching real FX data for ${pair}...`);
-      
-      const symbol = pair === 'USDJPY' ? 'USD' : 'USD';
-      const market = pair === 'USDJPY' ? 'JPY' : 'CHF';
-      const url = `https://www.alphavantage.co/query?function=FX_WEEKLY&from_symbol=${symbol}&to_symbol=${market}&apikey=${API_KEY}`;
-      
-      const response = await fetch(url);
-      const data = await response.json();
-      
-      if (data['Error Message']) {
-        throw new Error(data['Error Message']);
-      }
-      
-      if (data['Note']) {
-        throw new Error('Límite de API alcanzado. Espera y vuelve a intentar.');
-      }
-      
-      if (!data['Time Series FX (Weekly)']) {
-        throw new Error('Formato de respuesta inválido de Alpha Vantage');
-      }
-      
-      return parseAlphaVantageData(data, pair);
+      console.log(`✅ REAL FX data received for ${pair}:`, result.data.length, 'records');
+      return result.data;
       
     } catch (error) {
-      console.error(`Error fetching FX data for ${pair}:`, error);
-      throw new Error(`No se pudieron obtener datos FX para ${pair}: ${error.message}`);
+      console.error(`❌ Error fetching REAL FX data for ${pair}:`, error);
+      throw new Error(`No se pudieron obtener datos FX REALES para ${pair}: ${error.message}`);
     }
   };
 
-  // Parser para datos Alpha Vantage
-  const parseAlphaVantageData = (data, pair) => {
-    const timeSeries = data['Time Series FX (Weekly)'];
-    if (!timeSeries) {
-      throw new Error('No hay datos de series temporales disponibles');
-    }
-    
-    const fxData = [];
-    const entries = Object.entries(timeSeries).slice(0, 13);
-    
-    entries.forEach(([date, values], index) => {
-      const rate = parseFloat(values['4. close']);
-      let weeklyChange = 0;
-      
-      if (index > 0) {
-        const prevEntry = entries[index - 1];
-        const prevRate = parseFloat(prevEntry[1]['4. close']);
-        weeklyChange = ((rate - prevRate) / prevRate) * 100;
-      }
-      
-      fxData.push({
-        date,
-        rate: parseFloat(rate.toFixed(4)),
-        weeklyChange: parseFloat(weeklyChange.toFixed(2)),
-        weeklyChangeAbs: parseFloat((rate * weeklyChange / 100).toFixed(4))
-      });
-    });
-    
-    return fxData.reverse(); // Orden cronológico
-  };
-
-  // Función para obtener tasas de interés reales
+  // Función para obtener tasas de interés REALES via proxy
   const fetchRealInterestRates = async () => {
     try {
-      const FRED_API_KEY = process.env.REACT_APP_FRED_KEY;
+      console.log('🌐 Fetching REAL interest rates from FRED...');
       
-      if (!FRED_API_KEY || FRED_API_KEY === 'demo') {
-        throw new Error('API key de FRED requerida');
+      const response = await fetch('/api/interest-rates');
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Error fetching interest rates');
       }
       
-      console.log('Fetching real interest rates...');
-      
-      // URLs para cada tasa de interés
-      const urls = {
-        usd_3m: `https://api.stlouisfed.org/fred/series/observations?series_id=TB3MS&api_key=${FRED_API_KEY}&file_type=json&limit=1&sort_order=desc`,
-        jpy_3m: `https://api.stlouisfed.org/fred/series/observations?series_id=INTGSTJPM193N&api_key=${FRED_API_KEY}&file_type=json&limit=1&sort_order=desc`,
-        chf_3m: `https://api.stlouisfed.org/fred/series/observations?series_id=INTGSTCHM193N&api_key=${FRED_API_KEY}&file_type=json&limit=1&sort_order=desc`
-      };
-      
-      const rates = {};
-      const errors = [];
-      
-      for (const [currency, url] of Object.entries(urls)) {
-        try {
-          const response = await fetch(url);
-          const data = await response.json();
-          
-          if (data.error_message) {
-            throw new Error(data.error_message);
-          }
-          
-          if (data.observations && data.observations.length > 0) {
-            const value = parseFloat(data.observations[0].value);
-            if (!isNaN(value)) {
-              rates[currency] = value;
-            } else {
-              throw new Error('Valor de tasa inválido');
-            }
-          } else {
-            throw new Error('No hay observaciones disponibles');
-          }
-        } catch (error) {
-          console.error(`Error fetching ${currency} rate:`, error);
-          errors.push(`${currency}: ${error.message}`);
-        }
-      }
-      
-      if (Object.keys(rates).length === 0) {
-        throw new Error(`No se pudieron obtener tasas de interés. Errores: ${errors.join(', ')}`);
-      }
-      
-      // Si falta alguna tasa, usar valores por defecto para esas específicas
-      const defaultRates = {
-        usd_3m: 4.34,
-        jpy_3m: 0.77,
-        chf_3m: 0.96
-      };
-      
-      return { ...defaultRates, ...rates };
+      console.log('✅ REAL interest rates received:', result.rates);
+      return result.rates;
       
     } catch (error) {
-      console.error('Error fetching interest rates:', error);
-      throw new Error(`No se pudieron obtener tasas de interés: ${error.message}`);
+      console.error('❌ Error fetching REAL interest rates:', error);
+      throw new Error(`No se pudieron obtener tasas REALES: ${error.message}`);
     }
   };
 
+  // Función principal para obtener TODOS los datos 100% REALES
   const fetchAllData = async () => {
     setLoading(true);
     setDataError(null);
     
     try {
-      console.log('🌐 Obteniendo datos reales de APIs...');
+      console.log('🚀 Iniciando descarga de datos 100% REALES...');
+      console.log('📊 Fuentes:');
+      console.log('   - COT: CFTC Official via Python cot-reports library');
+      console.log('   - FX: Alpha Vantage Official API');
+      console.log('   - Rates: FRED Official API');
       
-      // Verificar que tenemos las API keys necesarias
-      const alphaVantageKey = process.env.REACT_APP_ALPHA_VANTAGE_KEY;
-      const fredKey = process.env.REACT_APP_FRED_KEY;
-      
-      if (!alphaVantageKey || alphaVantageKey === 'demo') {
-        throw new Error('API key de Alpha Vantage requerida para datos FX. Configura REACT_APP_ALPHA_VANTAGE_KEY en tu archivo .env');
-      }
-      
-      if (!fredKey || fredKey === 'demo') {
-        throw new Error('API key de FRED requerida para tasas de interés. Configura REACT_APP_FRED_KEY en tu archivo .env');
-      }
-      
-      // Ejecutar llamadas en paralelo
+      // Ejecutar todas las llamadas a APIs REALES en paralelo
       const [jpyData, chfData, usdJpyFxData, usdChfFxData, rates] = await Promise.all([
-        fetchRealCOTData('JPY'),
-        fetchRealCOTData('CHF'),
-        fetchRealFXData('USDJPY'),
-        fetchRealFXData('USDCHF'),
-        fetchRealInterestRates()
+        fetchRealCOTData('JPY'),  // 🐍 Python + cot-reports
+        fetchRealCOTData('CHF'),  // 🐍 Python + cot-reports
+        fetchRealFXData('USDJPY'), // Alpha Vantage
+        fetchRealFXData('USDCHF'), // Alpha Vantage
+        fetchRealInterestRates()   // FRED
       ]);
       
-      // Actualizar estado
+      console.log('🎉 TODOS LOS DATOS 100% REALES OBTENIDOS EXITOSAMENTE');
+      console.log('📈 COT JPY (CFTC Official):', jpyData.length, 'registros');
+      console.log('📈 COT CHF (CFTC Official):', chfData.length, 'registros');
+      console.log('💱 FX USDJPY (Alpha Vantage):', usdJpyFxData.length, 'registros');
+      console.log('💱 FX USDCHF (Alpha Vantage):', usdChfFxData.length, 'registros');
+      console.log('🏦 Interest Rates (FRED):', rates);
+      
+      // Verificar calidad de datos COT
+      if (jpyData.length === 0 || chfData.length === 0) {
+        throw new Error('No se recibieron datos COT válidos');
+      }
+      
+      // Actualizar estado con datos 100% REALES
       setCotData({ jpy: jpyData, chf: chfData });
       setFxData({ usdjpy: usdJpyFxData, usdchf: usdChfFxData });
       setInterestRates(rates);
       setLastUpdate(new Date());
       
-      // Calcular carry trade costs
+      // Calcular carry trade costs con datos 100% REALES
       const usdJpyCarryCosts = calculateCarryTradeCost(usdJpyFxData, 'USD', 'JPY', rates);
       const usdChfCarryCosts = calculateCarryTradeCost(usdChfFxData, 'USD', 'CHF', rates);
       
       setCarryTradeCosts({ usdjpy: usdJpyCarryCosts, usdchf: usdChfCarryCosts });
       
-      // Generar alertas
+      // Generar alertas basadas en datos 100% REALES
       const newAlerts = generateAlerts(jpyData, chfData, usdJpyCarryCosts, usdChfCarryCosts);
       setAlerts(newAlerts);
       
-      console.log('✅ Datos reales actualizados exitosamente');
+      console.log('✅ Dashboard actualizado con datos 100% REALES de CFTC + Alpha Vantage + FRED');
       
     } catch (error) {
-      console.error('❌ Error obteniendo datos reales:', error);
+      console.error('💥 ERROR obteniendo datos 100% REALES:', error);
       setDataError(error.message);
       
-      // Agregar alerta de error
       setAlerts([{
         currency: 'SYSTEM',
         type: 'error',
-        message: `Error: ${error.message}`,
+        message: `Error obteniendo datos 100% REALES: ${error.message}`,
         severity: 'high',
         category: 'ERROR'
       }]);
@@ -512,7 +360,7 @@ const SpecStatsCOTAnalyzer = () => {
         totalCarryCost: parseFloat(totalCarryCost.toFixed(4)),
         baseRate, 
         quoteRate,
-        dataSource: 'Real Data - CFTC/Alpha Vantage/FRED'
+        dataSource: '🐍 100% REAL: CFTC (Python) + Alpha Vantage + FRED'
       };
     });
   };
@@ -587,7 +435,13 @@ const SpecStatsCOTAnalyzer = () => {
     
     const statusColor = hasError ? 'text-red-600' : hasData ? 'text-green-600' : 'text-yellow-600';
     const StatusIcon = hasError ? WifiOff : hasData ? Wifi : RefreshCw;
-    const statusText = hasError ? 'Error de Datos' : hasData ? 'Datos Reales en Vivo' : 'Cargando...';
+    
+    let statusText = 'Cargando...';
+    if (hasError) {
+      statusText = 'Error de Datos';
+    } else if (hasData) {
+      statusText = '100% Datos Reales CFTC';
+    }
     
     return (
       <div className="flex items-center space-x-2">
@@ -602,43 +456,6 @@ const SpecStatsCOTAnalyzer = () => {
     );
   };
 
-  // Error de configuración de APIs
-  const ApiConfigError = () => {
-    const alphaVantageKey = process.env.REACT_APP_ALPHA_VANTAGE_KEY;
-    const fredKey = process.env.REACT_APP_FRED_KEY;
-    
-    const missingKeys = [];
-    if (!alphaVantageKey || alphaVantageKey === 'demo') missingKeys.push('Alpha Vantage');
-    if (!fredKey || fredKey === 'demo') missingKeys.push('FRED');
-    
-    if (missingKeys.length > 0) {
-      return (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-          <div className="flex items-center space-x-2 text-red-800">
-            <AlertTriangle size={20} />
-            <h3 className="font-bold">⚠️ Configuración Requerida</h3>
-          </div>
-          <div className="mt-2 text-sm text-red-700 space-y-2">
-            <p className="font-medium">API Keys faltantes: {missingKeys.join(', ')}</p>
-            <div className="bg-red-100 p-3 rounded border">
-              <p className="font-bold mb-2">📋 Crear archivo .env en la raíz del proyecto:</p>
-              <code className="text-xs bg-white p-2 rounded block">
-                REACT_APP_ALPHA_VANTAGE_KEY=tu_api_key_aqui<br/>
-                REACT_APP_FRED_KEY=tu_api_key_aqui
-              </code>
-            </div>
-            <p className="text-xs">
-              🔗 <strong>Alpha Vantage:</strong> https://www.alphavantage.co/support/#api-key<br/>
-              🔗 <strong>FRED:</strong> https://fred.stlouisfed.org/docs/api/api_key.html
-            </p>
-          </div>
-        </div>
-      );
-    }
-    
-    return null;
-  };
-
   // Error de datos
   const DataErrorDisplay = () => {
     if (!dataError) return null;
@@ -647,7 +464,7 @@ const SpecStatsCOTAnalyzer = () => {
       <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
         <div className="flex items-center space-x-2 text-red-800">
           <AlertTriangle size={20} />
-          <h3 className="font-bold">❌ Error al Obtener Datos</h3>
+          <h3 className="font-bold">❌ Error al Obtener Datos Reales</h3>
         </div>
         <div className="mt-2 text-sm text-red-700">
           <p className="font-medium">{dataError}</p>
@@ -655,7 +472,7 @@ const SpecStatsCOTAnalyzer = () => {
             onClick={fetchAllData}
             className="mt-3 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700"
           >
-            🔄 Reintentar
+            🔄 Reintentar Datos Reales
           </button>
         </div>
       </div>
@@ -754,7 +571,7 @@ const SpecStatsCOTAnalyzer = () => {
         
         <div className="text-xs text-gray-500 space-y-1">
           <p>Fecha reporte: {data.date}</p>
-          <p className="text-green-600 font-medium">✅ CFTC Data Real</p>
+          <p className="text-green-600 font-medium">✅ CFTC Data 100% Real (Python)</p>
         </div>
       </div>
     );
@@ -762,8 +579,7 @@ const SpecStatsCOTAnalyzer = () => {
 
   return (
     <div className="max-w-7xl mx-auto p-6 bg-gray-50 min-h-screen">
-      {/* Errores de configuración */}
-      <ApiConfigError />
+      {/* Errores de datos */}
       <DataErrorDisplay />
 
       {/* Header personalizado Spec Stats */}
@@ -776,11 +592,11 @@ const SpecStatsCOTAnalyzer = () => {
             <div>
               <h1 className="text-3xl font-bold mb-2">Monitor COT + Carry Trade</h1>
               <p className="text-purple-100">
-                Análisis exclusivo para estudiantes de Spec Stats - Solo Datos Reales
+                Análisis exclusivo para estudiantes de Spec Stats - Solo Datos 100% Reales
               </p>
             </div>
             <div className="text-right">
-              <p className="text-sm text-purple-200">🌐 Datos en Vivo</p>
+              <p className="text-sm text-purple-200">🐍 Datos 100% Reales</p>
               <p className="font-semibold">CFTC + Alpha Vantage + FRED</p>
             </div>
           </div>
@@ -802,7 +618,7 @@ const SpecStatsCOTAnalyzer = () => {
             style={{ backgroundColor: SPEC_STATS_CONFIG.colors.primary }}
           >
             <RefreshCw className={`${loading ? 'animate-spin' : ''}`} size={16} />
-            <span>{loading ? 'Actualizando...' : 'Actualizar Datos Reales'}</span>
+            <span>{loading ? 'Actualizando...' : 'Actualizar Datos 100% Reales'}</span>
           </button>
         </div>
       </div>
@@ -836,7 +652,7 @@ const SpecStatsCOTAnalyzer = () => {
         <div className="mb-6">
           <h2 className="text-xl font-bold mb-3 flex items-center">
             <AlertTriangle className="mr-2 text-orange-500" size={20} />
-            🚨 Alertas de Trading - Spec Stats (Datos Reales)
+            🚨 Alertas de Trading - Spec Stats (Datos 100% Reales)
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {alerts.map((alert, index) => (
@@ -867,7 +683,7 @@ const SpecStatsCOTAnalyzer = () => {
       <div className="mb-8">
         <h2 className="text-xl font-bold mb-4 flex items-center">
           <DollarSign className="mr-2 text-green-500" size={20} />
-          💰 Costos de Fondeo Carry Trade (Datos Reales Alpha Vantage + FRED)
+          💰 Costos de Fondeo Carry Trade (Datos 100% Reales)
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <CarryTradeCard 
@@ -893,7 +709,7 @@ const SpecStatsCOTAnalyzer = () => {
       <div className="space-y-8">
         {/* Gráfico de Costos de Carry Trade */}
         <div className="bg-white p-6 rounded-lg shadow-lg">
-          <h2 className="text-xl font-bold mb-4">💸 Evolución Costos de Carry Trade (Datos Reales)</h2>
+          <h2 className="text-xl font-bold mb-4">💸 Evolución Costos de Carry Trade (Datos 100% Reales)</h2>
           <ResponsiveContainer width="100%" height={400}>
             <ComposedChart>
               <CartesianGrid strokeDasharray="3 3" />
@@ -950,7 +766,7 @@ const SpecStatsCOTAnalyzer = () => {
 
         {/* Gráfico COT */}
         <div className="bg-white p-6 rounded-lg shadow-lg">
-          <h2 className="text-xl font-bold mb-4">📈 Evolución Posicionamiento Neto COT (CFTC Data Real)</h2>
+          <h2 className="text-xl font-bold mb-4">📈 Evolución Posicionamiento Neto COT (CFTC Data 100% Real)</h2>
           <ResponsiveContainer width="100%" height={400}>
             <LineChart>
               <CartesianGrid strokeDasharray="3 3" />
@@ -990,7 +806,7 @@ const SpecStatsCOTAnalyzer = () => {
         {/* Panel Educativo para Spec Stats */}
         <div className="bg-gradient-to-r from-purple-50 to-gray-50 p-6 rounded-lg border border-purple-200">
           <h3 className="text-xl font-bold mb-4" style={{ color: SPEC_STATS_CONFIG.colors.primary }}>
-            📚 Guía de Interpretación Spec Stats - ES/NQ Trading (Datos Reales)
+            📚 Guía de Interpretación Spec Stats - ES/NQ Trading (Datos 100% Reales)
           </h3>
           <div className="grid md:grid-cols-3 gap-4 text-sm">
             <div className="bg-white p-4 rounded-lg border border-green-200">
@@ -1032,10 +848,10 @@ const SpecStatsCOTAnalyzer = () => {
             Monitor exclusivo COT + Carry Trade para estudiantes de <strong>Spec Stats</strong>
           </p>
           <p className="text-xs text-gray-500 mt-1">
-            🌐 Datos en tiempo real: CFTC + Alpha Vantage + FRED APIs
+            🐍 Datos 100% reales: CFTC (Python) + Alpha Vantage + FRED APIs
           </p>
           <p className="text-xs text-green-600 mt-1 font-medium">
-            ✅ Solo datos reales - Sin simulaciones
+            ✅ Solo datos oficiales - Sin simulaciones - 100% Real
           </p>
         </div>
       </div>
