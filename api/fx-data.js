@@ -9,64 +9,58 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { pair } = req.query;
+    const FRED_API_KEY = process.env.FRED_KEY;
     
-    if (!pair || !['USDJPY', 'USDCHF'].includes(pair)) {
-      return res.status(400).json({ error: 'Pair must be USDJPY or USDCHF' });
+    if (!FRED_API_KEY) {
+      throw new Error('FRED API key not configured');
     }
 
-    const API_KEY = process.env.ALPHA_VANTAGE_KEY;
+    const urls = {
+      usd_3m: `https://api.stlouisfed.org/fred/series/observations?series_id=TB3MS&api_key=${FRED_API_KEY}&file_type=json&limit=1&sort_order=desc`,
+      jpy_3m: `https://api.stlouisfed.org/fred/series/observations?series_id=INTGSTJPM193N&api_key=${FRED_API_KEY}&file_type=json&limit=1&sort_order=desc`,
+      chf_3m: `https://api.stlouisfed.org/fred/series/observations?series_id=INTGSTCHM193N&api_key=${FRED_API_KEY}&file_type=json&limit=1&sort_order=desc`
+    };
     
-    if (!API_KEY) {
-      throw new Error('Alpha Vantage API key not configured');
-    }
-
-    const symbol = 'USD';
-    const market = pair === 'USDJPY' ? 'JPY' : 'CHF';
-    const url = `https://www.alphavantage.co/query?function=FX_WEEKLY&from_symbol=${symbol}&to_symbol=${market}&apikey=${API_KEY}`;
+    const rates = {};
+    const errors = [];
     
-    const response = await fetch(url);
-    const data = await response.json();
-    
-    if (data['Error Message']) {
-      throw new Error(data['Error Message']);
-    }
-    
-    if (data['Note']) {
-      throw new Error('Alpha Vantage API limit reached');
-    }
-    
-    if (!data['Time Series FX (Weekly)']) {
-      throw new Error('Invalid response format');
-    }
-    
-    const timeSeries = data['Time Series FX (Weekly)'];
-    const fxData = [];
-    const entries = Object.entries(timeSeries).slice(0, 13);
-    
-    entries.forEach(([date, values], index) => {
-      const rate = parseFloat(values['4. close']);
-      let weeklyChange = 0;
-      
-      if (index > 0) {
-        const prevEntry = entries[index - 1];
-        const prevRate = parseFloat(prevEntry[1]['4. close']);
-        weeklyChange = ((rate - prevRate) / prevRate) * 100;
+    const promises = Object.entries(urls).map(async ([currency, url]) => {
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data.error_message) {
+          throw new Error(data.error_message);
+        }
+        
+        if (data.observations && data.observations.length > 0) {
+          const value = parseFloat(data.observations[0].value);
+          if (!isNaN(value)) {
+            rates[currency] = value;
+            return { currency, value, success: true };
+          }
+        }
+        throw new Error('No valid data');
+      } catch (error) {
+        errors.push(`${currency}: ${error.message}`);
+        return { currency, error: error.message, success: false };
       }
-      
-      fxData.push({
-        date,
-        rate: parseFloat(rate.toFixed(4)),
-        weeklyChange: parseFloat(weeklyChange.toFixed(2)),
-        weeklyChangeAbs: parseFloat((rate * weeklyChange / 100).toFixed(4))
-      });
     });
+    
+    await Promise.all(promises);
+    
+    const defaultRates = {
+      usd_3m: 4.34,
+      jpy_3m: 0.77,
+      chf_3m: 0.96
+    };
+    
+    const finalRates = { ...defaultRates, ...rates };
     
     res.status(200).json({
       success: true,
-      pair,
-      data: fxData.reverse(),
-      source: 'Alpha Vantage Official',
+      rates: finalRates,
+      source: 'FRED Official API',
       timestamp: new Date().toISOString()
     });
     
