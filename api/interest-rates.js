@@ -1,7 +1,4 @@
-// ================================
-// CREAR ARCHIVO: api/interest-rates.js
-// ================================
-
+// api/interest-rates.js
 export default async function handler(req, res) {
   // Habilitar CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -14,11 +11,11 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Usar tu API key de FRED
-    const FRED_API_KEY = process.env.FRED_KEY; // En Vercel env vars
+    // Usar tu API key de FRED desde variables de entorno de Vercel
+    const FRED_API_KEY = process.env.FRED_KEY;
     
     if (!FRED_API_KEY) {
-      throw new Error('FRED API key not configured');
+      throw new Error('FRED API key not configured in Vercel');
     }
 
     console.log('Fetching real interest rates from FRED API');
